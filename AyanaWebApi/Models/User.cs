@@ -11,5 +11,9 @@ namespace AyanaWebApi.Models
         public string Token { get; set; }
 
         public DateTime Created { get; set; }
+
+        public byte[] PasswordHash { get; set; }
+
+        public byte[] PasswordSalt { get; set; }
     }
 }

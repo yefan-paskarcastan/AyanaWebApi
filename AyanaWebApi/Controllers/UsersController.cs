@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using AyanaWebApi.Models;
-using Microsoft.Extensions.Options;
 
 namespace AyanaWebApi.Controllers
 {
@@ -13,17 +12,15 @@ namespace AyanaWebApi.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        public UsersController(AyDbContext dbContext,
-                               IOptions<JWTSettings> jwtSettings)
+        public UsersController()
         {
-            _context = dbContext;
-            _jwtSettings = jwtSettings.Value;
+
         }
 
-        #region Private
-        readonly AyDbContext _context;
-
-        readonly JWTSettings _jwtSettings;
-        #endregion
+        [HttpPost("auth")]
+        public async Task<ActionResult<User>> Auth(User user)
+        {
+            return NotFound();
+        }
     }
 }
