@@ -5,22 +5,44 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using AyanaWebApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
+    [Route("[controller]")]
     public class UsersController : ControllerBase
     {
-        public UsersController()
+        public UsersController(IUserService userService)
         {
-
+            _userService = userService;
         }
 
+        [AllowAnonymous]
         [HttpPost("auth")]
-        public async Task<ActionResult<User>> Auth(User user)
+        public async Task<ActionResult<User>> Auth([FromBody]User user)
         {
             return NotFound();
         }
+
+        [HttpPost("regist")]
+        public async Task<ActionResult<User>> Regist([FromBody]User user)
+        {
+            try
+            {
+                string password = user.Token;
+                user.Token = string.Empty;
+                User createdUser = await _userService.Create(user, password);
+                return Ok(createdUser);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        readonly IUserService _userService;
     }
 }

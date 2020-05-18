@@ -57,6 +57,8 @@ namespace AyanaWebApi
                     ValidateAudience = false
                 };
             });
+
+            services.AddScoped<IUserService, UserService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
