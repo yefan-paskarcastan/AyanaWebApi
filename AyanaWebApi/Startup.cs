@@ -59,6 +59,7 @@ namespace AyanaWebApi
             });
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IRutorService, RutorService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

@@ -21,5 +21,7 @@ namespace AyanaWebApi.Models
         }
 
         public DbSet<User> Users { get; set; }
+
+        public DbSet<ParseResult> ParseResults { get; set; }
     }
 }
