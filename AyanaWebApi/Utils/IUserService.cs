@@ -22,6 +22,6 @@ namespace AyanaWebApi.Utils
         /// <param name="user">Пользователь</param>
         /// <param name="password">Пароль</param>
         /// <returns>Созданный пользователь</returns>
-        Task<User> Create(User user, string password);
+        Task<User> Create(User user);
     }
 }

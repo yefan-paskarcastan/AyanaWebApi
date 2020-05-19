@@ -69,16 +69,16 @@ namespace AyanaWebApi.Utils
         /// <param name="user">Пользователь</param>
         /// <param name="password">Пароль</param>
         /// <returns>Созданный пользователь</returns>
-        public async Task<User> Create(User user, string password)
+        public async Task<User> Create(User user)
         {
-            if (string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(user.Password))
                 throw new ArgumentNullException("Password is required");
 
             if (_context.Users.Any(x => x.Login == user.Login))
                 throw new Exception("Username \"" + user.Login + "\" is already taken");
 
             byte[] passwordHash, passwordSalt;
-            CreatePasswordHash(password, out passwordHash, out passwordSalt);
+            CreatePasswordHash(user.Password, out passwordHash, out passwordSalt);
 
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
@@ -88,6 +88,7 @@ namespace AyanaWebApi.Utils
 
             user.PasswordSalt = null;
             user.PasswordHash = null;
+            user.Password = null;
 
             return user;
         }

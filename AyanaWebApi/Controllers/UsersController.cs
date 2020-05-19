@@ -24,7 +24,12 @@ namespace AyanaWebApi.Controllers
         [HttpPost("auth")]
         public async Task<ActionResult<User>> Auth([FromBody]User user)
         {
-            return NotFound();
+            user = await _userService.Authenticate(user.Login, user.Password);
+
+            if (user == null)
+                return BadRequest(new { message = "Username or password is incorrect" });
+
+            return Ok(user);
         }
 
         [HttpPost("regist")]
@@ -32,9 +37,7 @@ namespace AyanaWebApi.Controllers
         {
             try
             {
-                string password = user.Token;
-                user.Token = string.Empty;
-                User createdUser = await _userService.Create(user, password);
+                User createdUser = await _userService.Create(user);
                 return Ok(createdUser);
             }
             catch (Exception ex)

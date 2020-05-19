@@ -10,6 +10,8 @@ namespace AyanaWebApi.Models
 
         public string Token { get; set; }
 
+        public string Password { get; set; }
+
         public DateTime Created { get; set; }
 
         public byte[] PasswordHash { get; set; }
