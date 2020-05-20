@@ -7,6 +7,8 @@ using AyanaWebApi.Models;
 using System.Net;
 using AyanaWebApi.ApiEntities;
 using System.Text;
+using HtmlAgilityPack;
+using System.Web;
 
 namespace AyanaWebApi.Utils
 {
@@ -31,11 +33,29 @@ namespace AyanaWebApi.Utils
             string page = await GetPage(rCheckList.UriList, rCheckList.ProxySocks5Addr, rCheckList.ProxySocks5Port);
             if (page != null)
             {
+                var htmlDocument = new HtmlDocument();
+                htmlDocument.LoadHtml(page);
+                HtmlNodeCollection htmlNodes = htmlDocument.DocumentNode.SelectNodes(rCheckList.XPathExpr);
+
+                if (htmlNodes != null)
+                {
+                    var postQuery =
+                        from el in htmlNodes
+                        select new RutorListItem
+                        {
+                            AddedDate = HttpUtility.HtmlDecode(el.ChildNodes[0].InnerText),
+                            HrefNumber =
+                                el.ChildNodes[1].ChildNodes[0].
+                                GetAttributeValue("href", null).Split('/')[2],
+                            Name = el.ChildNodes[1].ChildNodes[3].InnerText
+                        };
+                    IList<RutorListItem> items = postQuery.Reverse().ToList();
+                }
                 return new ParseResult()
                 {
                     Created = DateTime.Now,
-                    Message = page,
-                    Success = true
+                    Message = "XPath выражение вернуло null. Нужные объекты не найдены.",
+                    Success = false
                 };
             }
             else
