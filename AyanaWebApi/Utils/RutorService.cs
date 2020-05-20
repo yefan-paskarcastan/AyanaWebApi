@@ -35,19 +35,23 @@ namespace AyanaWebApi.Utils
             {
                 var htmlDocument = new HtmlDocument();
                 htmlDocument.LoadHtml(page);
-                HtmlNodeCollection htmlNodes = htmlDocument.DocumentNode.SelectNodes(rCheckList.XPathExpr);
+                HtmlNodeCollection nodesDate = htmlDocument.DocumentNode.SelectNodes(rCheckList.XPathExprItemDate);
+                HtmlNodeCollection nodesUniqNumber = htmlDocument.DocumentNode.SelectNodes(rCheckList.XPathExprItemUniqNumber);
+                HtmlNodeCollection nodesName = htmlDocument.DocumentNode.SelectNodes(rCheckList.XPathExprItemName);
 
-                if (htmlNodes != null)
+                if (nodesDate != null && 
+                    nodesUniqNumber != null && 
+                    nodesName != null)
                 {
                     var postQuery =
-                        from el in htmlNodes
+                        from date in nodesDate
+                        join number in nodesUniqNumber on date.Line equals number.Line
+                        join name in nodesName on date.Line equals name.Line - 1
                         select new RutorListItem
                         {
-                            AddedDate = HttpUtility.HtmlDecode(el.ChildNodes[0].InnerText),
-                            HrefNumber =
-                                el.ChildNodes[1].ChildNodes[0].
-                                GetAttributeValue("href", null).Split('/')[2],
-                            Name = el.ChildNodes[1].ChildNodes[3].InnerText
+                            AddedDate = HttpUtility.HtmlDecode(date.InnerText),
+                            HrefNumber = number.GetAttributeValue("href", null).Split('/')[2],
+                            Name = HttpUtility.HtmlDecode(name.InnerText),
                         };
                     IList<RutorListItem> items = postQuery.Reverse().ToList();
                 }
