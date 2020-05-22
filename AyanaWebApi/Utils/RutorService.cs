@@ -22,60 +22,33 @@ namespace AyanaWebApi.Utils
             _context = ayDbContext;
         }
 
+        //public async Task
+
+        /// <summary>
+        /// Возвращает список найденных раздач на странице со списком
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public async Task<IList<RutorListItem>> CheckListSettings(RutorCheckList param)
+        {
+            return await GetListItems(param);
+        }
+
         /// <summary>
         /// Проверит список раздач рутора и записать в базу
         /// </summary>
         /// <param name="uri">Ссылка на список рутора</param>
         /// <param name="xpathExp">Выражение xpath для парсинга</param>
         /// <returns></returns>
-        public async Task<ParseResult> CheckList(RutorCheckList rCheckList)
+        public async Task<ParseResult> CheckList(RutorCheckList param)
         {
-            string page = await GetPage(rCheckList.UriList, rCheckList.ProxySocks5Addr, rCheckList.ProxySocks5Port);
-            if (page != null)
+            IList<RutorListItem> items = await GetListItems(param);
+            if (items != null)
             {
-                var htmlDocument = new HtmlDocument();
-                htmlDocument.LoadHtml(page);
-                HtmlNodeCollection nodesDate = htmlDocument.DocumentNode.SelectNodes(rCheckList.XPathExprItemDate);
-                HtmlNodeCollection nodesUniqNumber = htmlDocument.DocumentNode.SelectNodes(rCheckList.XPathExprItemUniqNumber);
-                HtmlNodeCollection nodesName = htmlDocument.DocumentNode.SelectNodes(rCheckList.XPathExprItemName);
-
-                if (nodesDate != null && 
-                    nodesUniqNumber != null && 
-                    nodesName != null)
+                int newPostCount;
+                if (_context.RutorListItems.Count() == 0)
                 {
-                    var postQuery =
-                        from date in nodesDate
-                        join number in nodesUniqNumber on date.Line equals number.Line
-                        join name in nodesName on date.Line equals name.Line - 1
-                        select new RutorListItem
-                        {
-                            AddedDate = HttpUtility.HtmlDecode(date.InnerText),
-                            HrefNumber = 
-                                number.GetAttributeValue("href", null).
-                                Split(rCheckList.XPathParamSplitSeparator)[rCheckList.XPathParamSplitIndex],
-                            Name = HttpUtility.HtmlDecode(name.InnerText),
-                        };
-                    IList<RutorListItem> items = postQuery.Reverse().ToList();
-
-                    int newPostCount;
-                    if (_context.RutorListItems.Count() == 0)
-                    {
-                        await _context.RutorListItems.AddRangeAsync(items);
-                        newPostCount = await _context.SaveChangesAsync();
-                        return new ParseResult()
-                        {
-                            Created = DateTime.Now,
-                            Success = true,
-                            Message = $"{newPostCount} новых записей успешно добавлены в бд"
-                        };
-                    }
-                    IList<RutorListItem> oldItems = 
-                        _context.RutorListItems.
-                        OrderByDescending(d => d.AddedDate).Take(100).ToList();
-                    IList<RutorListItem> onlyNew = 
-                        items.Except(oldItems, new RutorListItemComaprer()).ToList();
-
-                    await _context.RutorListItems.AddRangeAsync(onlyNew);
+                    await _context.RutorListItems.AddRangeAsync(items);
                     newPostCount = await _context.SaveChangesAsync();
                     return new ParseResult()
                     {
@@ -84,11 +57,19 @@ namespace AyanaWebApi.Utils
                         Message = $"{newPostCount} новых записей успешно добавлены в бд"
                     };
                 }
+                IList<RutorListItem> oldItems = 
+                    _context.RutorListItems.
+                    OrderByDescending(d => d.Id).Take(100).ToList();
+                IList<RutorListItem> onlyNew = 
+                    items.Except(oldItems, new RutorListItemComaprer()).ToList();
+
+                await _context.RutorListItems.AddRangeAsync(onlyNew);
+                newPostCount = await _context.SaveChangesAsync();
                 return new ParseResult()
                 {
                     Created = DateTime.Now,
-                    Message = "XPath выражение вернуло null. Нужные объекты не найдены.",
-                    Success = false
+                    Success = true,
+                    Message = $"{newPostCount} новых записей успешно добавлены в бд"
                 };
             }
             else
@@ -137,6 +118,52 @@ namespace AyanaWebApi.Utils
             if (data != null)
             {
                 return Encoding.UTF8.GetString(data);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Возвращает список найденных раздач на странице со списком
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        async Task<IList<RutorListItem>> GetListItems(RutorCheckList param)
+        {
+            string page = await GetPage(param.UriList, param.ProxySocks5Addr, param.ProxySocks5Port);
+            if (page != null)
+            {
+                var htmlDocument = new HtmlDocument();
+                htmlDocument.LoadHtml(page);
+                HtmlNodeCollection nodesDate = htmlDocument.DocumentNode.SelectNodes(param.XPathExprItemDate);
+                HtmlNodeCollection nodesUniqNumber = htmlDocument.DocumentNode.SelectNodes(param.XPathExprItemUniqNumber);
+                HtmlNodeCollection nodesName = htmlDocument.DocumentNode.SelectNodes(param.XPathExprItemName);
+
+                if (nodesDate != null &&
+                    nodesUniqNumber != null &&
+                    nodesName != null)
+                {
+                    var postQuery =
+                        from date in nodesDate
+                        join number in nodesUniqNumber on date.Line equals number.Line
+                        join name in nodesName on date.Line equals name.Line - 1
+                        select new RutorListItem
+                        {
+                            AddedDate = HttpUtility.HtmlDecode(date.InnerText),
+                            HrefNumber =
+                                number.GetAttributeValue("href", null).
+                                Split(param.XPathParamSplitSeparator)[param.XPathParamSplitIndex],
+                            Name = HttpUtility.HtmlDecode(name.InnerText),
+                        };
+                    return postQuery.Reverse().ToList();
+                }
+                await _context.ParseResults.AddAsync(
+                    new ParseResult()
+                    {
+                        Created = DateTime.Now,
+                        Message = "XPath выражение вернуло null. Нужные объекты не найдены.",
+                        Success = false
+                    });
+                await _context.SaveChangesAsync();
             }
             return null;
         }

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using AyanaWebApi.Models;
 using AyanaWebApi.ApiEntities;
+using System.Collections.Generic;
 
 namespace AyanaWebApi.Utils
 {
@@ -12,5 +13,12 @@ namespace AyanaWebApi.Utils
         /// <param name="rutorCheckList">Ссылка на список рутора</param>
         /// <returns></returns>
         Task<ParseResult> CheckList(RutorCheckList rutorCheckList);
+
+        /// <summary>
+        /// Возвращает список найденных раздач на странице со списком
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        Task<IList<RutorListItem>> CheckListSettings(RutorCheckList param);
     }
 }

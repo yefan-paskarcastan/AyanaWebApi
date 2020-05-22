@@ -21,6 +21,17 @@ namespace AyanaWebApi.Controllers
             _rutorService = rutorService;
         }
 
+        [HttpPost("CheckListSettings")]
+        public async Task<ActionResult<IList<RutorListItem>>> CheckListSettings([FromBody]RutorCheckList rutorCheckList)
+        {
+            IList<RutorListItem> list = await _rutorService.CheckListSettings(rutorCheckList);
+
+            if (list != null)
+                return Ok(list);
+
+            return BadRequest("Не удалось заргузить страницу или XPath выражение ничего не нашло");
+        }
+
         [HttpPost("CheckList")]
         public async Task<ActionResult<ParseResult>> CheckList([FromBody]RutorCheckList rutorCheckList)
         {
