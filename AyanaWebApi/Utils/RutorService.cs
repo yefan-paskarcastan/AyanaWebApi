@@ -50,10 +50,39 @@ namespace AyanaWebApi.Utils
                         select new RutorListItem
                         {
                             AddedDate = HttpUtility.HtmlDecode(date.InnerText),
-                            HrefNumber = number.GetAttributeValue("href", null).Split('/')[2],
+                            HrefNumber = 
+                                number.GetAttributeValue("href", null).
+                                Split(rCheckList.XPathParamSplitSeparator)[rCheckList.XPathParamSplitIndex],
                             Name = HttpUtility.HtmlDecode(name.InnerText),
                         };
                     IList<RutorListItem> items = postQuery.Reverse().ToList();
+
+                    int newPostCount;
+                    if (_context.RutorListItems.Count() == 0)
+                    {
+                        await _context.RutorListItems.AddRangeAsync(items);
+                        newPostCount = await _context.SaveChangesAsync();
+                        return new ParseResult()
+                        {
+                            Created = DateTime.Now,
+                            Success = true,
+                            Message = $"{newPostCount} новых записей успешно добавлены в бд"
+                        };
+                    }
+                    IList<RutorListItem> oldItems = 
+                        _context.RutorListItems.
+                        OrderByDescending(d => d.AddedDate).Take(100).ToList();
+                    IList<RutorListItem> onlyNew = 
+                        items.Except(oldItems, new RutorListItemComaprer()).ToList();
+
+                    await _context.RutorListItems.AddRangeAsync(onlyNew);
+                    newPostCount = await _context.SaveChangesAsync();
+                    return new ParseResult()
+                    {
+                        Created = DateTime.Now,
+                        Success = true,
+                        Message = $"{newPostCount} новых записей успешно добавлены в бд"
+                    };
                 }
                 return new ParseResult()
                 {

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace AyanaWebApi.Models
+﻿namespace AyanaWebApi.Models
 {
     /// <summary>
     /// Экзепляр раздачи из списка раздач
