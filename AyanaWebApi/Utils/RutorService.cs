@@ -37,8 +37,15 @@ namespace AyanaWebApi.Utils
                     htmlDocument.LoadHtml(page);
                     HtmlNode nodeDescription =
                         htmlDocument.DocumentNode.SelectSingleNode(param.XPathExprDescription);
+                    HtmlNodeCollection nodeSpoilersRemove =
+                        nodeDescription.SelectNodes(param.XPathExprSpoiler);
                     HtmlNodeCollection nodeSpoilers =
                         htmlDocument.DocumentNode.SelectNodes(param.XPathExprSpoiler);
+
+                    foreach (var item in nodeSpoilersRemove)
+                    {
+                        item.Remove();
+                    }
 
                     var rutorItem = new RutorItem();
 
