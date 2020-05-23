@@ -22,7 +22,45 @@ namespace AyanaWebApi.Utils
             _context = ayDbContext;
         }
 
-        //public async Task
+        public async Task<RutorItem> ParseItem(RutorInputParseItem param)
+        {
+            RutorListItem listItem = 
+                _context.
+                RutorListItems.
+                SingleOrDefault(el => el.Id == param.ListItemId);
+            if (listItem != null)
+            {
+                string page = await GetPage(param.UriItem + listItem.HrefNumber, param.ProxySocks5Addr, param.ProxySocks5Port);
+                if (page != null)
+                {
+                    var htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(page);
+                    HtmlNode nodeDescription =
+                        htmlDocument.DocumentNode.SelectSingleNode(param.XPathExprDescription);
+                    HtmlNodeCollection nodeSpoilers =
+                        htmlDocument.DocumentNode.SelectNodes(param.XPathExprSpoiler);
+
+                    var rutorItem = new RutorItem();
+
+                    var spoilers = new List<RutorItemSpoiler>();
+                    foreach (var spoiler in nodeSpoilers)
+                    {
+                        var itemCollect = new RutorItemSpoiler()
+                        {
+                            Header = spoiler.FirstChild.InnerText,
+                            Body = spoiler.LastChild.InnerText,
+                            Created = DateTime.Now
+                        };
+                        spoilers.Add(itemCollect);
+                    }
+                    rutorItem.Description = nodeDescription.InnerHtml;
+                    rutorItem.Spoilers = spoilers;
+
+                    return rutorItem;
+                }
+            }
+            return null;
+        }
 
         /// <summary>
         /// Возвращает список найденных раздач на странице со списком

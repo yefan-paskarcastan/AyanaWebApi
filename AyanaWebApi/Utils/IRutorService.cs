@@ -20,5 +20,7 @@ namespace AyanaWebApi.Utils
         /// <param name="param"></param>
         /// <returns></returns>
         Task<IList<RutorListItem>> CheckListSettings(RutorCheckList param);
+
+        Task<RutorItem> ParseItem(RutorInputParseItem param);
     }
 }

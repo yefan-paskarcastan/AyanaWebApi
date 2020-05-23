@@ -21,6 +21,17 @@ namespace AyanaWebApi.Controllers
             _rutorService = rutorService;
         }
 
+        [HttpPost("ParseItem")]
+        public async Task<ActionResult<RutorItem>> ParseItem([FromBody]RutorInputParseItem parseParam)
+        {
+            RutorItem item = await _rutorService.ParseItem(parseParam);
+            if (item != null)
+            {
+                return Ok(item);
+            }
+            return BadRequest("Указанные id раздачи неверен или не удалось загрузить страницу");
+        }
+
         [HttpPost("CheckListSettings")]
         public async Task<ActionResult<IList<RutorListItem>>> CheckListSettings([FromBody]RutorCheckList rutorCheckList)
         {
