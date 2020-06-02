@@ -33,6 +33,11 @@ namespace AyanaWebApi.ApiEntities
         public string XPathExprSpoiler { get; set; }
 
         /// <summary>
+        /// XPath выражения для парсинга картинок
+        /// </summary>
+        public string XPathExprImgs { get; set; }
+
+        /// <summary>
         /// Id объекта листа, по которму будет строится адрес страницы
         /// </summary>
         public int ListItemId { get; set; }
