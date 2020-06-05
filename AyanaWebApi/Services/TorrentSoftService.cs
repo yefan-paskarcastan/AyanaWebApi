@@ -9,7 +9,6 @@ using System.Net.Http.Headers;
 using Newtonsoft.Json;
 
 using AyanaWebApi.Models;
-using AyanaWebApi.ApiEntities;
 using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services

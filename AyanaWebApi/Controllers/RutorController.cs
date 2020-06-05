@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services;
-using AyanaWebApi.ApiEntities;
 
 namespace AyanaWebApi.Controllers
 {
@@ -23,7 +22,7 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("ParseItem")]
-        public async Task<ActionResult<RutorItem>> ParseItem([FromBody]RutorInputParseItem parseParam)
+        public async Task<ActionResult<RutorItem>> ParseItem([FromBody]RutorParseItemInput parseParam)
         {
             RutorItem item = await _rutorService.ParseItem(parseParam);
             if (item != null)
@@ -34,7 +33,7 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("CheckListSettings")]
-        public async Task<ActionResult<IList<RutorListItem>>> CheckListSettings([FromBody]RutorCheckList rutorCheckList)
+        public async Task<ActionResult<IList<RutorListItem>>> CheckListSettings([FromBody]RutorCheckListInput rutorCheckList)
         {
             IList<RutorListItem> list = await _rutorService.CheckListSettings(rutorCheckList);
 
@@ -45,7 +44,7 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("CheckList")]
-        public async Task<ActionResult<Log>> CheckList([FromBody]RutorCheckList rutorCheckList)
+        public async Task<ActionResult<Log>> CheckList([FromBody]RutorCheckListInput rutorCheckList)
         {
             Log parseResult = await _rutorService.CheckList(rutorCheckList);
 

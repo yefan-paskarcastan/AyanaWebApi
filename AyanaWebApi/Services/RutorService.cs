@@ -9,7 +9,6 @@ using System.Web;
 using HtmlAgilityPack;
 using MihaZupan;
 
-using AyanaWebApi.ApiEntities;
 using AyanaWebApi.Models;
 using AyanaWebApi.Utils;
 
@@ -25,7 +24,7 @@ namespace AyanaWebApi.Services
             _context = ayDbContext;
         }
 
-        public async Task<RutorItem> ParseItem(RutorInputParseItem param)
+        public async Task<RutorItem> ParseItem(RutorParseItemInput param)
         {
             RutorListItem listItem = 
                 _context.
@@ -70,7 +69,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<IList<RutorListItem>> CheckListSettings(RutorCheckList param)
+        public async Task<IList<RutorListItem>> CheckListSettings(RutorCheckListInput param)
         {
             return await GetListItems(param);
         }
@@ -81,7 +80,7 @@ namespace AyanaWebApi.Services
         /// <param name="uri">Ссылка на список рутора</param>
         /// <param name="xpathExp">Выражение xpath для парсинга</param>
         /// <returns></returns>
-        public async Task<Log> CheckList(RutorCheckList param)
+        public async Task<Log> CheckList(RutorCheckListInput param)
         {
             IList<RutorListItem> items = await GetListItems(param);
             if (items != null)
@@ -156,7 +155,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        async Task<IList<RutorListItem>> GetListItems(RutorCheckList param)
+        async Task<IList<RutorListItem>> GetListItems(RutorCheckListInput param)
         {
             string page = await GetPage(param.UriList, param.ProxySocks5Addr, param.ProxySocks5Port);
             if (page != null)

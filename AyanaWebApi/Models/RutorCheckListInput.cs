@@ -1,9 +1,9 @@
-﻿namespace AyanaWebApi.ApiEntities
+﻿namespace AyanaWebApi.Models
 {
     /// <summary>
     /// Парамерты для проверки списка разадач
     /// </summary>
-    public class RutorCheckList
+    public class RutorCheckListInput
     {
         /// <summary>
         /// Адрес страницы со список разадч

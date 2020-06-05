@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
-using AyanaWebApi.ApiEntities;
+using AyanaWebApi.Models;
 using AyanaWebApi.Services;
 
 namespace AyanaWebApi.Controllers

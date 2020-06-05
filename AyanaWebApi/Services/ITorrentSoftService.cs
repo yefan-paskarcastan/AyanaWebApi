@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-using AyanaWebApi.ApiEntities;
+using AyanaWebApi.Models;
 
 namespace AyanaWebApi.Services
 {
