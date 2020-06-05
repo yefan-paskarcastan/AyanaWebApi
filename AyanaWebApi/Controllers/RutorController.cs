@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 using AyanaWebApi.Models;
-using AyanaWebApi.Utils;
+using AyanaWebApi.Services;
 using AyanaWebApi.ApiEntities;
 
 namespace AyanaWebApi.Controllers

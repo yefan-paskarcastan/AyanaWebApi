@@ -1,9 +1,10 @@
 ﻿using System.Threading.Tasks;
-using AyanaWebApi.Models;
-using AyanaWebApi.ApiEntities;
 using System.Collections.Generic;
 
-namespace AyanaWebApi.Utils
+using AyanaWebApi.Models;
+using AyanaWebApi.ApiEntities;
+
+namespace AyanaWebApi.Services
 {
     public interface IRutorService
     {

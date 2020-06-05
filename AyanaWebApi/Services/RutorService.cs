@@ -2,15 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MihaZupan;
-using AyanaWebApi.Models;
 using System.Net;
-using AyanaWebApi.ApiEntities;
 using System.Text;
-using HtmlAgilityPack;
 using System.Web;
 
-namespace AyanaWebApi.Utils
+using HtmlAgilityPack;
+using MihaZupan;
+
+using AyanaWebApi.ApiEntities;
+using AyanaWebApi.Models;
+using AyanaWebApi.Utils;
+
+namespace AyanaWebApi.Services
 {
     /// <summary>
     /// Парсит раздачи с рутора
@@ -142,22 +145,8 @@ namespace AyanaWebApi.Utils
             webClient.Proxy = new HttpToSocks5Proxy(address, port);
 
             byte[] data;
-            try
-            {
-                data = await webClient.DownloadDataTaskAsync(new Uri(uri));
-            }
-            catch (WebException ex)
-            {
-                var result = new ParseResult()
-                {
-                    Created = DateTime.Now,
-                    Message = $"WebException при загрузке страницы со списком разадач. {ex.Message}",
-                    Success = false
-                };
-                await _context.ParseResults.AddAsync(result);
-                await _context.SaveChangesAsync();
-                return null;
-            }
+            data = await webClient.DownloadDataTaskAsync(new Uri(uri));
+
             if (data != null)
             {
                 return Encoding.UTF8.GetString(data);

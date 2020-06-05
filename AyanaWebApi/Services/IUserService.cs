@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AyanaWebApi.Models;
 
-namespace AyanaWebApi.Utils
+namespace AyanaWebApi.Services
 {
     public interface IUserService
     {

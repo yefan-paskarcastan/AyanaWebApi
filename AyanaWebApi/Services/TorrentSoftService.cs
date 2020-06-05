@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 using AyanaWebApi.Models;
 using AyanaWebApi.ApiEntities;
 
-namespace AyanaWebApi.Utils
+namespace AyanaWebApi.Services
 {
     public class TorrentSoftService : ITorrentSoftService
     {

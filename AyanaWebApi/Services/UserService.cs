@@ -7,9 +7,11 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using AyanaWebApi.Models;
 
-namespace AyanaWebApi.Utils
+using AyanaWebApi.Models;
+using AyanaWebApi.Utils;
+
+namespace AyanaWebApi.Services
 {
     public class UserService : IUserService
     {

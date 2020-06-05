@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+
 using AyanaWebApi.Models;
-using AyanaWebApi.Utils;
+using AyanaWebApi.Services;
 
 namespace AyanaWebApi.Controllers
 {
