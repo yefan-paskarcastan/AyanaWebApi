@@ -28,16 +28,21 @@ namespace AyanaWebApi.Utils
         {
             _httpClient.BaseAddress = new Uri(inputParam.BaseAddress);
             string userHash = await Authorize(inputParam);
-            TorrentSoftImgUploadResult imgUploadResult = await UploadPoster(inputParam,
-                                                                            "qqfile",
-                                                                            "img.jpg",
-                                                                            "img.jpg",
-                                                                            userHash);
-            if (imgUploadResult.Success)
+            TorrentSoftFileUploadResult torrentUploadResult = await UploadFile(inputParam,
+                                                                               "program.torrent",
+                                                                               "program.torrent",
+                                                                               userHash,
+                                                                               inputParam.TorrentUploadQueryString);
+            TorrentSoftFileUploadResult imgUploadResult = await UploadFile(inputParam,
+                                                                           "img.jpg",
+                                                                           "img.jpg",
+                                                                           userHash,
+                                                                           inputParam.PosterUploadQueryString);
+            if (imgUploadResult.Success && torrentUploadResult.Success)
             {
                 return await AddPost(inputParam, imgUploadResult, userHash);
             }
-            return imgUploadResult.Success;
+            return false;
         }
 
         #region Private
@@ -60,6 +65,7 @@ namespace AyanaWebApi.Utils
             int startHash = htmlPage.IndexOf(inputParam.UserHashFindVarName)
                                      + inputParam.UserHashFindVarName.Length
                                      + inputParam.UserHashExStringCount;
+            if (startHash == 0 || startHash == -1) return null;
             return htmlPage.Substring(startHash, inputParam.UserHashLength);
         }
 
@@ -71,38 +77,37 @@ namespace AyanaWebApi.Utils
         /// <param name="httpFormFileName"></param>
         /// <param name="fullPathFileOnServer"></param>
         /// <returns></returns>
-        async Task<TorrentSoftImgUploadResult> UploadPoster(TorrentSoftAddPostTestInput inputParam,
-                                                            string httpFormFileHeader,
-                                                            string httpFormFileName,
-                                                            string fullPathFileOnServer,
-                                                            string userHash)
+        async Task<TorrentSoftFileUploadResult> UploadFile(TorrentSoftAddPostTestInput inputParam,
+                                                           string httpFormFileName,
+                                                           string fullPathFileOnServer,
+                                                           string userHash,
+                                                           Dictionary<string, string> queryString)
         {
             var form = new MultipartFormDataContent();
-            HttpContent content = new StringContent(httpFormFileHeader);
-            form.Add(content, httpFormFileHeader);
+            HttpContent content = new StringContent(inputParam.AddPostFormFileHeader);
+            form.Add(content, inputParam.AddPostFormFileHeader);
 
             content = new StreamContent(System.IO.File.OpenRead(fullPathFileOnServer));
             content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
             {
-                Name = httpFormFileHeader,
+                Name = inputParam.AddPostFormFileHeader,
                 FileName = httpFormFileName,
             };
             form.Add(content);
 
             var query = HttpUtility.ParseQueryString("");
-            foreach (var item in inputParam.PosterUploadQueryString)
+            foreach (var item in queryString)
             {
                 query[item.Key] = item.Value;
             }
-            query[httpFormFileHeader] = httpFormFileName;
+            query[inputParam.AddPostFormFileHeader] = httpFormFileName;
             query[inputParam.UserHashHttpHeaderName] = userHash;
 
-            string fullAddrUploadImg = inputParam.UploadPosterAddress + query.ToString();
-            var result = await _httpClient.PostAsync(fullAddrUploadImg, form);
-            result.EnsureSuccessStatusCode();
+            string fullAddrUploadFile = inputParam.UploadFileAddress + query.ToString();
+            var result = await _httpClient.PostAsync(fullAddrUploadFile, form);
 
             var contents = await result.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<TorrentSoftImgUploadResult>(contents);
+            return JsonConvert.DeserializeObject<TorrentSoftFileUploadResult>(contents);
         }
 
         /// <summary>
@@ -112,7 +117,7 @@ namespace AyanaWebApi.Utils
         /// <param name="imgUploadResult"></param>
         /// <returns></returns>
         async Task<bool> AddPost(TorrentSoftAddPostTestInput inputParam,
-                                 TorrentSoftImgUploadResult imgUploadResult,
+                                 TorrentSoftFileUploadResult imgUploadResult,
                                  string userHash)
         {
             IEnumerable<KeyValuePair<string, string>> formContent = inputParam.FormData;

@@ -18,9 +18,9 @@ namespace AyanaWebApi.ApiEntities
         public string AddPostAddress { get; set; }
 
         /// <summary>
-        /// Адрес для загрузки постера
+        /// Адрес для загрузки файла на сайт
         /// </summary>
-        public string UploadPosterAddress { get; set; }
+        public string UploadFileAddress { get; set; }
 
         /// <summary>
         /// Название заголовка для пользовательского хэша
@@ -49,6 +49,11 @@ namespace AyanaWebApi.ApiEntities
         public string AddPostFormPosterHeader { get; set; }
 
         /// <summary>
+        /// Заголовок для запроса, в котором будут содержаться двоичные данные файла
+        /// </summary>
+        public string AddPostFormFileHeader { get; set; }
+
+        /// <summary>
         /// Параметры формы для добавления поста
         /// </summary>
         public Dictionary<string, string> FormData { get; set; }
@@ -57,6 +62,11 @@ namespace AyanaWebApi.ApiEntities
         /// Квери стринг для загрукзи постера
         /// </summary>
         public Dictionary<string, string> PosterUploadQueryString { get; set; }
+
+        /// <summary>
+        /// Квери стринг для загрузки торрент файла
+        /// </summary>
+        public Dictionary<string, string> TorrentUploadQueryString { get; set; }
 
         /// <summary>
         /// Данные для авторизации на сайте

@@ -1,6 +1,6 @@
 ﻿namespace AyanaWebApi.ApiEntities
 {
-    public class TorrentSoftImgUploadResult
+    public class TorrentSoftFileUploadResult
     {
         public string Link { get; set; }
 
