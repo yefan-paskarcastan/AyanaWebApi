@@ -45,9 +45,9 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("CheckList")]
-        public async Task<ActionResult<ParseResult>> CheckList([FromBody]RutorCheckList rutorCheckList)
+        public async Task<ActionResult<Log>> CheckList([FromBody]RutorCheckList rutorCheckList)
         {
-            ParseResult parseResult = await _rutorService.CheckList(rutorCheckList);
+            Log parseResult = await _rutorService.CheckList(rutorCheckList);
 
             return Ok(parseResult);
         }

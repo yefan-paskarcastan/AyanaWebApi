@@ -81,7 +81,7 @@ namespace AyanaWebApi.Services
         /// <param name="uri">Ссылка на список рутора</param>
         /// <param name="xpathExp">Выражение xpath для парсинга</param>
         /// <returns></returns>
-        public async Task<ParseResult> CheckList(RutorCheckList param)
+        public async Task<Log> CheckList(RutorCheckList param)
         {
             IList<RutorListItem> items = await GetListItems(param);
             if (items != null)
@@ -91,10 +91,9 @@ namespace AyanaWebApi.Services
                 {
                     await _context.RutorListItems.AddRangeAsync(items);
                     newPostCount = await _context.SaveChangesAsync();
-                    return new ParseResult()
+                    return new Log()
                     {
                         Created = DateTime.Now,
-                        Success = true,
                         Message = $"{newPostCount} новых записей успешно добавлены в бд"
                     };
                 }
@@ -111,20 +110,18 @@ namespace AyanaWebApi.Services
 
                 await _context.RutorListItems.AddRangeAsync(onlyNew);
                 newPostCount = await _context.SaveChangesAsync();
-                return new ParseResult()
+                return new Log()
                 {
                     Created = DateTime.Now,
-                    Success = true,
                     Message = $"{newPostCount} новых записей успешно добавлены в бд"
                 };
             }
             else
             {
-                return new ParseResult()
+                return new Log()
                 {
                     Created = DateTime.Now,
                     Message = "При загрузке страницы со списком раздач вернулось null.",
-                    Success = false
                 };
             }
         }
@@ -188,12 +185,11 @@ namespace AyanaWebApi.Services
                         };
                     return postQuery.Reverse().ToList();
                 }
-                await _context.ParseResults.AddAsync(
-                    new ParseResult()
+                await _context.Logs.AddAsync(
+                    new Log()
                     {
                         Created = DateTime.Now,
                         Message = "XPath выражение вернуло null. Нужные объекты не найдены.",
-                        Success = false
                     });
                 await _context.SaveChangesAsync();
             }

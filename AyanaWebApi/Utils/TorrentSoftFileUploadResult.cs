@@ -1,4 +1,4 @@
-﻿namespace AyanaWebApi.ApiEntities
+﻿namespace AyanaWebApi.Utils
 {
     public class TorrentSoftFileUploadResult
     {

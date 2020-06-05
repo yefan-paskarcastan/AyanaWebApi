@@ -3,22 +3,25 @@
 namespace AyanaWebApi.Models
 {
     /// <summary>
-    /// Результат парсинга
+    /// Лог
     /// </summary>
-    public class ParseResult
+    public class Log
     {
         public int Id { get; set; }
 
+        /// <summary>
+        /// Дата и время ошибки
+        /// </summary>
         public DateTime Created { get; set; }
 
         /// <summary>
-        /// Сообщение о результате парсинга
+        /// Сообщение об ошибке
         /// </summary>
         public string Message { get; set; }
 
         /// <summary>
-        /// Результат парсинга. Если истина, значит все прошло без ошибок
+        /// Место возникновения ошибки
         /// </summary>
-        public bool Success { get; set; }
+        public string Location { get; set; }
     }
 }
