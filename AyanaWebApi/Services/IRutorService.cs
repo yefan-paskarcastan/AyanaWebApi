@@ -12,14 +12,14 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="rutorCheckList">Ссылка на список рутора</param>
         /// <returns></returns>
-        Task<Log> CheckList(RutorCheckListInput rutorCheckList);
+        Task<IList<RutorListItem>> CheckList(RutorCheckListInput rutorCheckList);
 
         /// <summary>
         /// Возвращает список найденных раздач на странице со списком
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        Task<IList<RutorListItem>> CheckListSettings(RutorCheckListInput param);
+        Task<IList<RutorListItem>> CheckListTest(RutorCheckListInput param);
 
         Task<RutorItem> ParseItem(RutorParseItemInput param);
     }

@@ -65,11 +65,12 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Возвращает список найденных раздач на странице со списком
+        /// Возвращает список найденных раздач на странице со списком.
+        /// Проверка работоспособности
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<IList<RutorListItem>> CheckListSettings(RutorCheckListInput param)
+        public async Task<IList<RutorListItem>> CheckListTest(RutorCheckListInput param)
         {
             return await GetListItems(param);
         }
@@ -80,21 +81,16 @@ namespace AyanaWebApi.Services
         /// <param name="uri">Ссылка на список рутора</param>
         /// <param name="xpathExp">Выражение xpath для парсинга</param>
         /// <returns></returns>
-        public async Task<Log> CheckList(RutorCheckListInput param)
+        public async Task<IList<RutorListItem>> CheckList(RutorCheckListInput param)
         {
             IList<RutorListItem> items = await GetListItems(param);
             if (items != null)
             {
-                int newPostCount;
                 if (_context.RutorListItems.Count() == 0)
                 {
                     await _context.RutorListItems.AddRangeAsync(items);
-                    newPostCount = await _context.SaveChangesAsync();
-                    return new Log()
-                    {
-                        Created = DateTime.Now,
-                        Message = $"{newPostCount} новых записей успешно добавлены в бд"
-                    };
+                    await _context.SaveChangesAsync();
+                    return items;
                 }
                 IList<RutorListItem> oldItems = 
                     _context
@@ -108,21 +104,17 @@ namespace AyanaWebApi.Services
                     .ToList();
 
                 await _context.RutorListItems.AddRangeAsync(onlyNew);
-                newPostCount = await _context.SaveChangesAsync();
-                return new Log()
+                await _context.SaveChangesAsync();
+                return onlyNew;
+            }
+            _context.Logs.Add(new Log
                 {
                     Created = DateTime.Now,
-                    Message = $"{newPostCount} новых записей успешно добавлены в бд"
-                };
-            }
-            else
-            {
-                return new Log()
-                {
-                    Created = DateTime.Now,
-                    Message = "При загрузке страницы со списком раздач вернулось null.",
-                };
-            }
+                    Location = "RutorService / CheckList / Работа с новым и существующим списком раздач",
+                    Message = "При получении полного списка раздач вернулось null",
+                });
+            _context.SaveChanges();
+            return null;
         }
 
         #region Private
@@ -134,19 +126,30 @@ namespace AyanaWebApi.Services
         /// <param name="uri">Адрес страницы</param>
         /// <param name="address">Socks5 адрес прокси</param>
         /// <param name="port">Порт прокси</param>
-        /// <returns>Веб страница</returns>
+        /// <returns>Веб страница, если произошла ошибка возвращает null</returns>
         async Task<string> GetPage(string uri, string address, int port)
         {
             var webClient = new WebClient();
             webClient.Proxy = new HttpToSocks5Proxy(address, port);
 
-            byte[] data;
-            data = await webClient.DownloadDataTaskAsync(new Uri(uri));
-
-            if (data != null)
+            byte[] data = null;
+            try
             {
-                return Encoding.UTF8.GetString(data);
+                data = await webClient.DownloadDataTaskAsync(new Uri(uri));
             }
+            catch (WebException ex)
+            {
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "Rutor Service / Get Page / Загрузка веб страницы",
+                    Message = "При загрузке произошла ошибка. Указан неврный адрес или произошла другая сетевая ошибка",
+                    StackTrace = ex.StackTrace
+                });
+                _context.SaveChanges();
+            }
+            
+            if (data != null) return Encoding.UTF8.GetString(data);
             return null;
         }
 
@@ -184,14 +187,23 @@ namespace AyanaWebApi.Services
                         };
                     return postQuery.Reverse().ToList();
                 }
-                await _context.Logs.AddAsync(
+                _context.Logs.Add(
                     new Log()
                     {
                         Created = DateTime.Now,
+                        Location = "RutorService / GetListItems / Получение полного списка раздач с рутора",
                         Message = "XPath выражение вернуло null. Нужные объекты не найдены.",
                     });
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
+                return null;
             }
+            _context.Logs.Add(new Log
+            {
+                Created = DateTime.Now,
+                Location = "RutorService / GetListItems / Получение полного списка раздач с рутора",
+                Message = "При получении веб страницы вернулось null"
+            });
+            _context.SaveChanges();
             return null;
         }
 

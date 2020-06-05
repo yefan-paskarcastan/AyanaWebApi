@@ -32,23 +32,27 @@ namespace AyanaWebApi.Controllers
             return BadRequest("Указанные id раздачи неверен или не удалось загрузить страницу");
         }
 
-        [HttpPost("CheckListSettings")]
-        public async Task<ActionResult<IList<RutorListItem>>> CheckListSettings([FromBody]RutorCheckListInput rutorCheckList)
+        [HttpPost("CheckListTest")]
+        public async Task<ActionResult<IList<RutorListItem>>> CheckListTest([FromBody]RutorCheckListInput rutorCheckList)
         {
-            IList<RutorListItem> list = await _rutorService.CheckListSettings(rutorCheckList);
+            IList<RutorListItem> list = await _rutorService.CheckListTest(rutorCheckList);
 
             if (list != null)
                 return Ok(list);
 
-            return BadRequest("Не удалось заргузить страницу или XPath выражение ничего не нашло");
+            return BadRequest("Не удалось получить список раздач");
         }
 
         [HttpPost("CheckList")]
-        public async Task<ActionResult<Log>> CheckList([FromBody]RutorCheckListInput rutorCheckList)
+        public async Task<ActionResult<IList<RutorListItem>>> CheckList([FromBody]RutorCheckListInput rutorCheckList)
         {
-            Log parseResult = await _rutorService.CheckList(rutorCheckList);
+            var result = await _rutorService.CheckList(rutorCheckList);
 
-            return Ok(parseResult);
+            if (result != null)
+            {
+                return Ok(result);
+            }
+            return BadRequest("При проверке списка раздач произошла ошибка");
         }
 
         readonly IRutorService _rutorService;

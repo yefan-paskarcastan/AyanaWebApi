@@ -23,5 +23,10 @@ namespace AyanaWebApi.Models
         /// Место возникновения ошибки
         /// </summary>
         public string Location { get; set; }
+
+        /// <summary>
+        /// Стек трейс, если возник эксепшен
+        /// </summary>
+        public string StackTrace { get; set; }
     }
 }
