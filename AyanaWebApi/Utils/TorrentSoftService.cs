@@ -18,17 +18,24 @@ namespace AyanaWebApi.Utils
         public TorrentSoftService(AyDbContext context)
         {
             _context = context;
+
+            var handler = new HttpClientHandler();
+            handler.CookieContainer = new CookieContainer();
+            _httpClient = new HttpClient(handler);
         }
 
         public async Task<bool> AddPostTest(TorrentSoftAddPostTestInput inputParam)
         {
+            _httpClient.BaseAddress = new Uri(inputParam.BaseAddress);
+            string userHash = await Authorize(inputParam);
             TorrentSoftImgUploadResult imgUploadResult = await UploadPoster(inputParam,
                                                                             "qqfile",
                                                                             "img.jpg",
-                                                                            "img.jpg");
+                                                                            "img.jpg",
+                                                                            userHash);
             if (imgUploadResult.Success)
             {
-                return await AddPost(inputParam, imgUploadResult);
+                return await AddPost(inputParam, imgUploadResult, userHash);
             }
             return imgUploadResult.Success;
         }
@@ -36,8 +43,28 @@ namespace AyanaWebApi.Utils
         #region Private
         readonly AyDbContext _context;
 
+        readonly HttpClient _httpClient;
+
         /// <summary>
-        /// Загружает постер на сервер
+        /// Авторизоваться на сайте
+        /// </summary>
+        /// <param name="inputParam">Параметры доступа к сайту</param>
+        /// <returns></returns>
+        async Task<string> Authorize(TorrentSoftAddPostTestInput inputParam)
+        {
+            IEnumerable<KeyValuePair<string, string>> formContent = inputParam.AuthData;
+            var content = new FormUrlEncodedContent(formContent);
+
+            HttpResponseMessage result = await _httpClient.PostAsync(inputParam.AddPostAddress, content);
+            string htmlPage = await result.Content.ReadAsStringAsync();
+            int startHash = htmlPage.IndexOf(inputParam.UserHashFindVarName)
+                                     + inputParam.UserHashFindVarName.Length
+                                     + inputParam.UserHashExStringCount;
+            return htmlPage.Substring(startHash, inputParam.UserHashLength);
+        }
+
+        /// <summary>
+        /// Загрузить постер на cайт
         /// </summary>
         /// <param name="inputParam"></param>
         /// <param name="httpFormFileHeader"></param>
@@ -47,73 +74,57 @@ namespace AyanaWebApi.Utils
         async Task<TorrentSoftImgUploadResult> UploadPoster(TorrentSoftAddPostTestInput inputParam,
                                                             string httpFormFileHeader,
                                                             string httpFormFileName,
-                                                            string fullPathFileOnServer)
+                                                            string fullPathFileOnServer,
+                                                            string userHash)
         {
-            var baseAddress = new Uri(inputParam.BaseAddress);
-            var cookieContainer = new CookieContainer();
-            using (var handler = new HttpClientHandler { CookieContainer = cookieContainer, })
-            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            var form = new MultipartFormDataContent();
+            HttpContent content = new StringContent(httpFormFileHeader);
+            form.Add(content, httpFormFileHeader);
+
+            content = new StreamContent(System.IO.File.OpenRead(fullPathFileOnServer));
+            content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
             {
-                var form = new MultipartFormDataContent();
-                HttpContent content = new StringContent(httpFormFileHeader);
-                form.Add(content, httpFormFileHeader);
-                content = new StreamContent(System.IO.File.OpenRead(fullPathFileOnServer));
-                content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
-                {
-                    Name = httpFormFileHeader,
-                    FileName = httpFormFileName,
-                };
-                form.Add(content);
+                Name = httpFormFileHeader,
+                FileName = httpFormFileName,
+            };
+            form.Add(content);
 
-                foreach (KeyValuePair<string, string> item in inputParam.Cookies)
-                {
-                    cookieContainer.Add(baseAddress, new Cookie(item.Key, item.Value));
-                }
-
-                var query = HttpUtility.ParseQueryString("");
-                foreach (var item in inputParam.PosterUploadQueryString)
-                {
-                    query[item.Key] = item.Value;
-                }
-                query[httpFormFileHeader] = httpFormFileName;
-
-                string fullAddrUploadImg = inputParam.UploadPosterAddress + query.ToString();
-                var result = await client.PostAsync(fullAddrUploadImg, form);
-                result.EnsureSuccessStatusCode();
-
-                var contents = await result.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<TorrentSoftImgUploadResult>(contents);
+            var query = HttpUtility.ParseQueryString("");
+            foreach (var item in inputParam.PosterUploadQueryString)
+            {
+                query[item.Key] = item.Value;
             }
+            query[httpFormFileHeader] = httpFormFileName;
+            query[inputParam.UserHashHttpHeaderName] = userHash;
+
+            string fullAddrUploadImg = inputParam.UploadPosterAddress + query.ToString();
+            var result = await _httpClient.PostAsync(fullAddrUploadImg, form);
+            result.EnsureSuccessStatusCode();
+
+            var contents = await result.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<TorrentSoftImgUploadResult>(contents);
         }
 
         /// <summary>
-        /// Добавляет новый пост на сервер
+        /// Добавляет новый пост на сайт
         /// </summary>
         /// <param name="inputParam"></param>
         /// <param name="imgUploadResult"></param>
         /// <returns></returns>
         async Task<bool> AddPost(TorrentSoftAddPostTestInput inputParam,
-                                 TorrentSoftImgUploadResult imgUploadResult)
+                                 TorrentSoftImgUploadResult imgUploadResult,
+                                 string userHash)
         {
-            var baseAddress = new Uri(inputParam.BaseAddress);
-            var cookieContainer = new CookieContainer();
-            using (var handler = new HttpClientHandler() { CookieContainer = cookieContainer })
-            using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
+            IEnumerable<KeyValuePair<string, string>> formContent = inputParam.FormData;
+            var manualContent = new Dictionary<string, string>
             {
-                IEnumerable<KeyValuePair<string, string>> formContent = inputParam.FormData;
-                var manualContent = new Dictionary<string, string>
-                {
-                    {"xfield[poster2]", imgUploadResult.Xfvalue}
-                };
-                var content = new FormUrlEncodedContent(formContent.Union(manualContent));
+                {inputParam.AddPostFormPosterHeader, imgUploadResult.Xfvalue},
+                {inputParam.UserHashHttpHeaderName, userHash}
+            };
+            var content = new FormUrlEncodedContent(formContent.Union(manualContent));
 
-                foreach (KeyValuePair<string, string> item in inputParam.Cookies)
-                {
-                    cookieContainer.Add(baseAddress, new Cookie(item.Key, item.Value));
-                }
-                var result = await client.PostAsync(inputParam.AddPostAddress, content);
-                return result.IsSuccessStatusCode;
-            }
+            var result = await _httpClient.PostAsync(inputParam.AddPostAddress, content);
+            return result.IsSuccessStatusCode;
         }
         #endregion
     }
