@@ -4,14 +4,16 @@ using AyanaWebApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace AyanaWebApi.Migrations
 {
     [DbContext(typeof(AyDbContext))]
-    partial class AyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200606115325_AddCreatedDateTimeInRutorListItem")]
+    partial class AddCreatedDateTimeInRutorListItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,8 +52,8 @@ namespace AyanaWebApi.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<DateTime>("AddedDate")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("AddedDate")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");

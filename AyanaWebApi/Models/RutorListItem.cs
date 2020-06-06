@@ -1,4 +1,6 @@
-﻿namespace AyanaWebApi.Models
+﻿using System;
+
+namespace AyanaWebApi.Models
 {
     /// <summary>
     /// Экзепляр раздачи из списка раздач
@@ -7,10 +9,12 @@
     {
         public int Id { get; set; }
 
+        public DateTime Created { get; set; }
+
         /// <summary>
         /// Дата добавления из колонки "Добавлено"
         /// </summary>
-        public string AddedDate { get; set; }
+        public DateTime AddedDate { get; set; }
 
         /// <summary>
         /// Уникальный номер раздачи

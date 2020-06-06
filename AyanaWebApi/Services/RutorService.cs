@@ -11,6 +11,7 @@ using MihaZupan;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Utils;
+using System.Globalization;
 
 namespace AyanaWebApi.Services
 {
@@ -122,7 +123,7 @@ namespace AyanaWebApi.Services
                 IList<RutorListItem> oldItems = 
                     _context
                     .RutorListItems
-                    .OrderByDescending(d => d.Id)
+                    .OrderByDescending(d => d.AddedDate)
                     .Take(100)
                     .ToList();
                 IList<RutorListItem> onlyNew = 
@@ -200,19 +201,24 @@ namespace AyanaWebApi.Services
                     nodesUniqNumber != null &&
                     nodesName != null)
                 {
+                    var ruCultutre = new CultureInfo("RU-ru");                    
                     var postQuery =
                         from date in nodesDate
                         join number in nodesUniqNumber on date.Line equals number.Line
                         join name in nodesName on date.Line equals name.Line - 1
                         select new RutorListItem
                         {
-                            AddedDate = HttpUtility.HtmlDecode(date.InnerText),
+                            Created = DateTime.Now,
+                            AddedDate = DateTime.ParseExact(HttpUtility.HtmlDecode(date.InnerText), 
+                                                            "dd MMM yy", 
+                                                            ruCultutre, 
+                                                            DateTimeStyles.AllowInnerWhite),
                             HrefNumber =
                                 number.GetAttributeValue("href", null).
                                 Split(param.XPathParamSplitSeparator)[param.XPathParamSplitIndex],
                             Name = HttpUtility.HtmlDecode(name.InnerText),
                         };
-                    return postQuery.Reverse().ToList();
+                    return postQuery.ToList();
                 }
                 _context.Logs.Add(
                     new Log()
