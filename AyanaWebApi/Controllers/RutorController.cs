@@ -29,7 +29,7 @@ namespace AyanaWebApi.Controllers
             {
                 return Ok(item);
             }
-            return BadRequest("Указанные id раздачи неверен или не удалось загрузить страницу");
+            return BadRequest("Не удалось распарсить. Указанный id раздачи неверен или не удалось загрузить страницу");
         }
 
         [HttpPost("CheckListTest")]

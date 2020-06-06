@@ -24,12 +24,18 @@ namespace AyanaWebApi.Services
             _context = ayDbContext;
         }
 
+        /// <summary>
+        /// Парсит указанную раздачу
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
         public async Task<RutorItem> ParseItem(RutorParseItemInput param)
         {
             RutorListItem listItem = 
-                _context.
-                RutorListItems.
-                SingleOrDefault(el => el.Id == param.ListItemId);
+                _context
+                .RutorListItems
+                .SingleOrDefault(el => el.Id == param.ListItemId);
+
             if (listItem != null)
             {
                 string page = await GetPage(param.UriItem + listItem.HrefNumber, param.ProxySocks5Addr, param.ProxySocks5Port);
@@ -47,20 +53,41 @@ namespace AyanaWebApi.Services
                                                         param.XPathExprDescription,
                                                         param.XPathExprSpoiler);
 
-                    if (description == null 
-                        || listSpoiler == null
-                        || listImgs == null) return null;
+                    if (description == null || listImgs == null)
+                    {
+                        _context.Logs.Add(new Log
+                        {
+                            Created = DateTime.Now,
+                            Location = $"RutorService / ParseItem / Парсинг раздачи / Id - {listItem.Id} / Href - {listItem.HrefNumber}",
+                            Message = "Не удалось получить описани раздачи или ее изображения. Проверьте XPath или загружаемую страницу.",
+                        });
+                        _context.SaveChanges();
+                        return null;
+                    }
 
-                    var rutorItem = new RutorItem
+                    return new RutorItem
                     {
                         Description = description,
                         Spoilers = listSpoiler,
                         Imgs = listImgs
                     };
-
-                    return rutorItem;
                 }
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = $"RutorService / ParseItem / Парсинг раздачи / Id - {listItem.Id} / Href - {listItem.HrefNumber}",
+                    Message = "Не удалось получить веб страницу с раздачей",
+                });
+                _context.SaveChanges();
+                return null;
             }
+            _context.Logs.Add(new Log
+            {
+                Created = DateTime.Now,
+                Location = "RutorService / ParseItem / Парсинг раздачи",
+                Message = "Не удалось найти в базе раздачу из списка с указнным Id",
+            });
+            _context.SaveChanges();
             return null;
         }
 
@@ -219,9 +246,19 @@ namespace AyanaWebApi.Services
             HtmlNodeCollection nodeSpoilersRemove =
                 nodeDescription.SelectNodes(xPathSpoilers);
 
-            if (nodeDescription == null) return null;
-            if (nodeSpoilersRemove == null) return null;
+            if (nodeDescription == null)
+            {
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "RutorService / GetDescription / Парсинг описания раздачи",
+                    Message = "Не удалось найти описание раздачи по указанному XPath выражению",
+                });
+                _context.SaveChanges();
+                return null;
+            }
 
+            if (nodeSpoilersRemove != null)
             foreach (var item in nodeSpoilersRemove)
             {
                 item.Remove();
@@ -241,7 +278,18 @@ namespace AyanaWebApi.Services
             HtmlNodeCollection nodeSpoilers =
                 doc.DocumentNode.SelectNodes(xPathSpoilers);
 
-            if (nodeSpoilers == null) return null;
+            if (nodeSpoilers == null) 
+            {
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "RutorService / GetSpoilers / Парсинг раздачи / Парсинг спойлеров",
+                    Message = "Не удалось найти спойлеры на странице с раздачей",
+                });
+                _context.SaveChanges();
+                return null; 
+            }
+
             var spoilers = new List<RutorItemSpoiler>();
             foreach (var spoiler in nodeSpoilers)
             {
@@ -291,7 +339,17 @@ namespace AyanaWebApi.Services
             HtmlNodeCollection nodeImgs =
                 doc.DocumentNode.SelectNodes(xPathImgs);
 
-            if (nodeImgs == null) return null;
+            if (nodeImgs == null)
+            {
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "RutorService / GetImgs / Парсинг раздачи / Получение изображений из описания",
+                    Message = "Не удалось найти ни одного изображения в описании раздачи",
+                });
+                _context.SaveChanges();
+                return null; 
+            }
 
             List<RutorItemImg> list =
                 (from img in nodeImgs

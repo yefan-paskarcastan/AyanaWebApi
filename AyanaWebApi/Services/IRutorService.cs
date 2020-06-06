@@ -21,6 +21,11 @@ namespace AyanaWebApi.Services
         /// <returns></returns>
         Task<IList<RutorListItem>> CheckListTest(RutorCheckListInput param);
 
+        /// <summary>
+        /// Парсит указанную раздачу
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
         Task<RutorItem> ParseItem(RutorParseItemInput param);
     }
 }
