@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services;
-using System.Globalization;
 
 namespace AyanaWebApi.Controllers
 {
@@ -22,10 +21,10 @@ namespace AyanaWebApi.Controllers
             _rutorService = rutorService;
         }
 
-        [HttpPost("ParseItem")]
-        public async Task<ActionResult<RutorItem>> ParseItem([FromBody]RutorParseItemInput parseParam)
+        [HttpPost("ParseItemTest")]
+        public async Task<ActionResult<RutorItem>> ParseItemTest([FromBody]RutorParseItemInput parseParam)
         {
-            RutorItem item = await _rutorService.ParseItem(parseParam);
+            RutorItem item = await _rutorService.ParseItemTest(parseParam);
             if (item != null)
             {
                 return Ok(item);

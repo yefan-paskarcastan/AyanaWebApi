@@ -18,5 +18,9 @@ namespace AyanaWebApi.Models
         public List<RutorItemSpoiler> Spoilers { get; set; }
 
         public List<RutorItemImg> Imgs { get; set; }
+
+        public int RutorListItemId { get; set; }
+
+        public RutorListItem RutorListItem { get;set; }
     }
 }

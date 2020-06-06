@@ -26,11 +26,36 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Парсит указанную раздачу
+        /// Парсит указанную раздачу и записывает ее в базу
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
         public async Task<RutorItem> ParseItem(RutorParseItemInput param)
+        {
+            RutorItem item = await ParseItemTest(param);
+            if (item != null)
+            {
+                _context.RutorItems.Add(item);
+                _context.SaveChanges();
+                return item;
+            }
+
+            _context.Logs.Add(new Log
+            {
+                Created = DateTime.Now,
+                Location = "RutorService / ParseItem / Парсинг раздачи",
+                Message = "Не удалось распрарсить раздачу",
+            });
+            _context.SaveChanges();
+            return null;
+        }
+
+        /// <summary>
+        /// Парсит указанную раздачу
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public async Task<RutorItem> ParseItemTest(RutorParseItemInput param)
         {
             RutorListItem listItem = 
                 _context
@@ -59,7 +84,7 @@ namespace AyanaWebApi.Services
                         _context.Logs.Add(new Log
                         {
                             Created = DateTime.Now,
-                            Location = $"RutorService / ParseItem / Парсинг раздачи / Id - {listItem.Id} / Href - {listItem.HrefNumber}",
+                            Location = $"RutorService / ParseItemTest / Парсинг раздачи / Id - {listItem.Id} / Href - {listItem.HrefNumber}",
                             Message = "Не удалось получить описани раздачи или ее изображения. Проверьте XPath или загружаемую страницу.",
                         });
                         _context.SaveChanges();
@@ -68,15 +93,18 @@ namespace AyanaWebApi.Services
 
                     return new RutorItem
                     {
+                        Created = DateTime.Now,
+                        Name = listItem.Name,
                         Description = description,
                         Spoilers = listSpoiler,
-                        Imgs = listImgs
+                        Imgs = listImgs,
+                        RutorListItemId = param.ListItemId,
                     };
                 }
                 _context.Logs.Add(new Log
                 {
                     Created = DateTime.Now,
-                    Location = $"RutorService / ParseItem / Парсинг раздачи / Id - {listItem.Id} / Href - {listItem.HrefNumber}",
+                    Location = $"RutorService / ParseItemTest / Парсинг раздачи / Id - {listItem.Id} / Href - {listItem.HrefNumber}",
                     Message = "Не удалось получить веб страницу с раздачей",
                 });
                 _context.SaveChanges();
@@ -85,7 +113,7 @@ namespace AyanaWebApi.Services
             _context.Logs.Add(new Log
             {
                 Created = DateTime.Now,
-                Location = "RutorService / ParseItem / Парсинг раздачи",
+                Location = "RutorService / ParseItemTest / Парсинг раздачи",
                 Message = "Не удалось найти в базе раздачу из списка с указнным Id",
             });
             _context.SaveChanges();

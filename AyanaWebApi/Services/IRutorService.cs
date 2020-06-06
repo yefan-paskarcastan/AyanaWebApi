@@ -26,6 +26,13 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
+        Task<RutorItem> ParseItemTest(RutorParseItemInput param);
+
+        /// <summary>
+        /// Парсит указанную раздачу и записывает ее в базу
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
         Task<RutorItem> ParseItem(RutorParseItemInput param);
     }
 }

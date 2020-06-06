@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace AyanaWebApi.Models
 {
@@ -25,5 +26,10 @@ namespace AyanaWebApi.Models
         /// Название раздачи, которое отображается пользователю
         /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Посты, полученные по этому экземпляру
+        /// </summary>
+        public List<RutorItem> RutorItems { get; set; }
     }
 }
