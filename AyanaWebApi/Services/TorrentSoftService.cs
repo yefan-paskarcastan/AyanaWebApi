@@ -24,6 +24,11 @@ namespace AyanaWebApi.Services
             _httpClient = new HttpClient(handler);
         }
 
+        /// <summary>
+        /// Добавляет тестовый пост на сайт. Проверка работоспособности
+        /// </summary>
+        /// <param name="inputParam"></param>
+        /// <returns></returns>
         public async Task<bool> AddPostTest(TorrentSoftAddPostTestInput inputParam)
         {
             _httpClient.BaseAddress = new Uri(inputParam.BaseAddress);
@@ -54,7 +59,7 @@ namespace AyanaWebApi.Services
         /// Авторизоваться на сайте
         /// </summary>
         /// <param name="inputParam">Параметры доступа к сайту</param>
-        /// <returns></returns>
+        /// <returns>Возвращает хеш пользователя, который нужно добавлять к некоторым запросам. Если авторизвация не успешна - null</returns>
         async Task<string> Authorize(TorrentSoftAddPostTestInput inputParam)
         {
             IEnumerable<KeyValuePair<string, string>> formContent = inputParam.AuthData;

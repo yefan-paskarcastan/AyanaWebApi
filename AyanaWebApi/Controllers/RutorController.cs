@@ -21,6 +21,17 @@ namespace AyanaWebApi.Controllers
             _rutorService = rutorService;
         }
 
+        [HttpPost("ParseItem")]
+        public async Task<ActionResult<RutorItem>> ParseItem([FromBody] RutorParseItemInput parseParam)
+        {
+            RutorItem item = await _rutorService.ParseItem(parseParam);
+            if (item != null)
+            {
+                return Ok(item);
+            }
+            return BadRequest("Не удалось распарсить");
+        }
+
         [HttpPost("ParseItemTest")]
         public async Task<ActionResult<RutorItem>> ParseItemTest([FromBody]RutorParseItemInput parseParam)
         {

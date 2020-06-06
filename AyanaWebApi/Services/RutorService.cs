@@ -37,6 +37,15 @@ namespace AyanaWebApi.Services
             {
                 _context.RutorItems.Add(item);
                 _context.SaveChanges();
+                foreach (var img in item.Imgs)
+                {
+                    img.RutorItem = null;
+                }
+                foreach (var spl in item.Spoilers)
+                {
+                    spl.RutorItem = null;
+                }
+                item.RutorListItem = null;
                 return item;
             }
 
