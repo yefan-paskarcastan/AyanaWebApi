@@ -25,7 +25,7 @@ namespace AyanaWebApi.Controllers
         public async Task<ActionResult<string>> RutorTorrent(DriverRutorTorrentInput param)
         {
             string result = await _driverService.RutorTorrent(param);
-            return BadRequest($"Не удалось добавить пост {result}");
+            return Ok($"Все работает {result}");
         }
 
         readonly IDriverService _driverService;

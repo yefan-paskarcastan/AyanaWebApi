@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 using MihaZupan;
 using AyanaWebApi.Models;
+using System.Drawing;
 
 namespace AyanaWebApi.Services
 {
@@ -19,11 +20,17 @@ namespace AyanaWebApi.Services
             _context = ayDbContext;
         }
 
+        /// <summary>
+        /// Подготавливает распрашеный пост к выкладыванию
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
         public async Task<string> RutorTorrent(DriverRutorTorrentInput param)
         {
             RutorItem rutorItem = _context
                                   .RutorItems
                                   .Include(el => el.RutorListItem)
+                                  .Include(el => el.Imgs)
                                   .SingleOrDefault(el => el.Id == param.ParseItemId);
 
             if (rutorItem != null)
@@ -46,7 +53,22 @@ namespace AyanaWebApi.Services
                     return null;
                 }
                 post.TorrentFile = torrentFile;
-                return torrentFile;
+
+                string posterFile = await GetPosterImg(rutorItem.Imgs, param);
+                if (posterFile == null)
+                {
+                    _context.Logs.Add(new Log
+                    {
+                        Created = DateTime.Now,
+                        Location = "DriverService / Rutor Torrent / Преобразование раздачи",
+                        Message = $"Не удалось загрузить постер. RutorItemId: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}",
+                    });
+                    _context.SaveChanges();
+                    return null;
+                }
+                post.PosterImg = posterFile;
+
+                return posterFile;
             }
             _context.Logs.Add(new Log
             {
@@ -111,6 +133,83 @@ namespace AyanaWebApi.Services
         {
             string[] stringArr = filename.Split(Path.GetInvalidFileNameChars());
             return string.Join("", stringArr);
+        }
+
+        /// <summary>
+        /// Выбирает постер из списка изображений и сохраняет его
+        /// </summary>
+        /// <param name="listImg"></param>
+        /// <returns>Полное имя файла</returns>
+        async Task<string> GetPosterImg(List<RutorItemImg> listImg, 
+                                        DriverRutorTorrentInput param)
+        {
+            IList<RutorItemImg> withoutLink =
+                (from img in listImg
+                 where img.ParentUrl == null && img.ChildUrl != null
+                 select img).ToList();
+
+            if (withoutLink.Count > 0)
+            {
+                if (withoutLink.Count == 1)
+                {
+                    RutorItemImg img = withoutLink.Single();
+                    string fullFileNameOne = await DownloadFile(img.ChildUrl,
+                                                                Path.GetFileName(img.ChildUrl),
+                                                                param.ProxySocks5Addr,
+                                                                param.ProxySocks5Port);
+                    if (fullFileNameOne == null)
+                    {
+                        _context.Logs.Add(new Log
+                        {
+                            Created = DateTime.Now,
+                            Location = "Driver Service / Get Poster Img / Загрузка постера",
+                            Message = "При загрузке постера произошла ошибка",
+                        });
+                        _context.SaveChanges();
+                        return null;
+                    }
+                    return fullFileNameOne;
+                }
+
+                int maxSize = 0;
+                string posterUri = "";
+                foreach (RutorItemImg item in withoutLink)
+                {
+                    var webClient = new WebClient();
+                    Stream stream = await webClient.OpenReadTaskAsync(item.ChildUrl);
+                    var img = new Bitmap(stream);
+                    if (maxSize < img.Width * img.Height)
+                    {
+                        maxSize = img.Width * img.Height;
+                        posterUri = item.ChildUrl;
+                    }
+                }
+
+                string fullFileName = await DownloadFile(posterUri,
+                                                         Path.GetFileName(posterUri),
+                                                         param.ProxySocks5Addr,
+                                                         param.ProxySocks5Port);
+                if (fullFileName == null)
+                {
+                    _context.Logs.Add(new Log
+                    {
+                        Created = DateTime.Now,
+                        Location = "Driver Service / Get Poster Img / Загрузка постера",
+                        Message = "При загрузке постера произошла ошибка",
+                    });
+                    _context.SaveChanges();
+                    return null;
+                }
+                return fullFileName;
+            }
+            _context.Logs.Add(new Log
+            {
+                Created = DateTime.Now,
+                Location = "Driver Service / Get Poster Img / Загрузка постера",
+                Message = "Не удалось выбрать подходящий постер или изображения отсутсвуют",
+            });
+            _context.SaveChanges();
+            return null;
         }
         #endregion
     }
