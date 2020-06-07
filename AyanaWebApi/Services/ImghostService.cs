@@ -27,7 +27,7 @@ namespace AyanaWebApi.Services
             var listImg = new List<string>();
             foreach (string item in param.ImgsUri)
             {
-                foreach (ImghostParamsParsing parsParam in param.ParsingParams)
+                foreach (ImghostParsingInput parsParam in param.ParsingParams)
                 {
                     if (item.Contains(parsParam.Def))
                     {
@@ -96,7 +96,7 @@ namespace AyanaWebApi.Services
                     Message = $"Не удалось однозначно определить изображение на странице. Неверное XPath выражение. Uri: {uri}",
                 });
                 _context.SaveChanges();
-                return null;
+                return uri;
             }
             _context.Logs.Add(new Log
             {
@@ -105,7 +105,7 @@ namespace AyanaWebApi.Services
                 Message = "При загрузке произошла ошибка. Указан неврный адрес или произошла другая сетевая ошибка",
             });
             _context.SaveChanges();
-            return null;
+            return uri;
         }
 
         readonly AyDbContext _context;

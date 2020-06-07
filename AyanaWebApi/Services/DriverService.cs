@@ -9,15 +9,19 @@ using System.Drawing;
 using Microsoft.EntityFrameworkCore;
 
 using MihaZupan;
+using HtmlAgilityPack;
+
 using AyanaWebApi.Models;
 
 namespace AyanaWebApi.Services
 {
     public class DriverService : IDriverService
     {
-        public DriverService(AyDbContext ayDbContext)
+        public DriverService(AyDbContext ayDbContext,
+                             IImghostService imghostService)
         {
             _context = ayDbContext;
+            _imghostService = imghostService;
         }
 
         /// <summary>
@@ -31,6 +35,7 @@ namespace AyanaWebApi.Services
                                   .RutorItems
                                   .Include(el => el.RutorListItem)
                                   .Include(el => el.Imgs)
+                                  .Include(el => el.Spoilers)
                                   .SingleOrDefault(el => el.Id == param.ParseItemId);
 
             if (rutorItem != null)
@@ -69,6 +74,24 @@ namespace AyanaWebApi.Services
                 }
                 post.PosterImg = posterFile;
 
+                var queryUriImgs =
+                    (from el in rutorItem.Imgs
+                     where el.ParentUrl != null
+                     select el.ParentUrl).ToList();
+                var queryParams =
+                    (from el in _context.ImghostParsingInputs
+                     where el.Active == true
+                     select el).ToList();
+                post.Screenshots = 
+                    (await _imghostService.GetOriginalsUri(new ImghostGetOriginalsInput
+                    {
+                        ImgsUri = queryUriImgs,
+                        ParsingParams = queryParams,
+                    })).ToList();
+
+                post.Description = FormatDescription(rutorItem.Description, post.PosterImg);
+                post.Spoilers = FormatSpoilers(rutorItem.Spoilers);
+
                 return post;
             }
             _context.Logs.Add(new Log
@@ -83,6 +106,8 @@ namespace AyanaWebApi.Services
 
         #region Private
         readonly AyDbContext _context;
+
+        readonly IImghostService _imghostService;
 
         /// <summary>
         /// Загружает файл в локальную папку
@@ -227,6 +252,71 @@ namespace AyanaWebApi.Services
             });
             _context.SaveChanges();
             return null;
+        }
+
+        /// <summary>
+        /// Подготавливает описание
+        /// </summary>
+        /// <param name="post"></param>
+        /// <returns></returns>
+        string FormatDescription(string desc, string poster)
+        {
+            HtmlDocument htmlDocument = new HtmlDocument();
+            htmlDocument.LoadHtml(desc);
+
+            HtmlNode htmlNode = htmlDocument.DocumentNode;
+            HtmlNodeCollection nodesScrenshots = htmlNode.SelectNodes(@"//img[parent::a]");
+
+            if (nodesScrenshots != null)
+            {
+                foreach (var item in nodesScrenshots)
+                {
+                    item.Remove();
+                }
+            }
+
+            HtmlNodeCollection nodesImgs = htmlNode.SelectNodes(@"//img");
+            if (nodesImgs != null && nodesImgs.Count == 2)
+            {
+                var item = nodesImgs.Where(el => el.GetAttributeValue("src", null)
+                                                    .Contains(Path.GetFileName(poster)))
+                                                    .SingleOrDefault();
+                item.Remove();
+            }
+            else
+            {
+                foreach (var item in nodesImgs)
+                {
+                    item.Remove();
+                }
+            }
+
+            string description = htmlNode.OuterHtml.Replace("<div></div>", "");
+
+            description = description.Replace("<hr>", "");
+            description = description.Replace("<br>", "");
+
+            while (description.Contains(Environment.NewLine + Environment.NewLine))
+            {
+                description = description.Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine);
+            }
+            return description;
+        }
+
+        /// <summary>
+        /// Подготавливает сполйеры
+        /// </summary>
+        /// <param name="lst"></param>
+        /// <returns></returns>
+        string FormatSpoilers(List<RutorItemSpoiler> lst)
+        {
+            string spoilersResult = Environment.NewLine + Environment.NewLine;
+
+            foreach (var item in lst)
+            {
+                spoilersResult += $"[spoiler={item.Header}]{item.Body}[/spoiler]";
+            }
+            return spoilersResult;
         }
         #endregion
     }

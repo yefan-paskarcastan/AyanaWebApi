@@ -1,7 +1,13 @@
-﻿namespace AyanaWebApi.Models
+﻿using System;
+
+namespace AyanaWebApi.Models
 {
-    public class ImghostParamsParsing
+    public class ImghostParsingInput
     {
+        public int Id { get; set; }
+
+        public DateTime Created { get; set; }
+
         /// <summary>
         /// Строка по которой определяется принадлежность
         /// </summary>
@@ -16,5 +22,10 @@
         /// Название аттрибута для парсинга
         /// </summary>
         public string Attr { get; set; }
+
+        /// <summary>
+        /// Действующая настройка
+        /// </summary>
+        public bool Active { get; set; }
     }
 }

@@ -7,7 +7,7 @@ namespace AyanaWebApi.Models
 {
     public class ImghostGetOriginalsInput
     {
-        public List<ImghostParamsParsing> ParsingParams { get; set; }
+        public List<ImghostParsingInput> ParsingParams { get; set; }
 
         public List<string> ImgsUri { get; set; }
     }
