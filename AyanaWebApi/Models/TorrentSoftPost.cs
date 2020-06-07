@@ -13,7 +13,7 @@ namespace AyanaWebApi.Models
 
         public List<string> Screenshots { get; set; }
 
-        public List<RutorItemSpoiler> Spoilers { get; set; }
+        public string Spoilers { get; set; }
 
         public string PosterImg { get; set; }
 

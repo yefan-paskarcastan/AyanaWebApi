@@ -5,11 +5,11 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Drawing;
 using Microsoft.EntityFrameworkCore;
 
 using MihaZupan;
 using AyanaWebApi.Models;
-using System.Drawing;
 
 namespace AyanaWebApi.Services
 {
@@ -25,7 +25,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<string> RutorTorrent(DriverRutorTorrentInput param)
+        public async Task<TorrentSoftPost> RutorTorrent(DriverRutorTorrentInput param)
         {
             RutorItem rutorItem = _context
                                   .RutorItems
@@ -37,6 +37,7 @@ namespace AyanaWebApi.Services
             {
                 var post = new TorrentSoftPost();
                 post.Name = rutorItem.Name;
+
                 string torrentFile = await DownloadFile(param.TorrentUri + rutorItem.RutorListItem.HrefNumber,
                                                         rutorItem.Name + ".torrent",
                                                         param.ProxySocks5Addr,
@@ -68,7 +69,7 @@ namespace AyanaWebApi.Services
                 }
                 post.PosterImg = posterFile;
 
-                return posterFile;
+                return post;
             }
             _context.Logs.Add(new Log
             {
@@ -176,7 +177,23 @@ namespace AyanaWebApi.Services
                 foreach (RutorItemImg item in withoutLink)
                 {
                     var webClient = new WebClient();
-                    Stream stream = await webClient.OpenReadTaskAsync(item.ChildUrl);
+                    Stream stream;
+                    try
+                    {
+                        stream = await webClient.OpenReadTaskAsync(item.ChildUrl);
+                    }
+                    catch (WebException ex)
+                    {
+                        _context.Logs.Add(new Log
+                        {
+                            Created = DateTime.Now,
+                            Location = "Driver Service / Get Poster Img / Выбор постера",
+                            Message = $"При загрузке файла постера произошла ошибка. Url {item.ChildUrl}",
+                            StackTrace = ex.StackTrace,
+                        });
+                        _context.SaveChanges();
+                        return null;
+                    }
                     var img = new Bitmap(stream);
                     if (maxSize < img.Width * img.Height)
                     {

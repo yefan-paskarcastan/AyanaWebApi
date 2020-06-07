@@ -22,10 +22,10 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("RutorTorrent")]
-        public async Task<ActionResult<string>> RutorTorrent(DriverRutorTorrentInput param)
+        public async Task<ActionResult<TorrentSoftPost>> RutorTorrent(DriverRutorTorrentInput param)
         {
-            string result = await _driverService.RutorTorrent(param);
-            return Ok($"Все работает {result}");
+            TorrentSoftPost result = await _driverService.RutorTorrent(param);
+            return Ok(result);
         }
 
         readonly IDriverService _driverService;
