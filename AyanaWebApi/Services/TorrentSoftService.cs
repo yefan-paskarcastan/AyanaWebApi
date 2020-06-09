@@ -75,7 +75,7 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Загрузить постер на cайт
+        /// Загрузить файл на cайт
         /// </summary>
         /// <param name="inputParam"></param>
         /// <param name="httpFormFileHeader"></param>

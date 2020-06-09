@@ -10,5 +10,7 @@ namespace AyanaWebApi.Services
     public interface IDriverService
     {
         Task<TorrentSoftPost> RutorTorrent(DriverRutorTorrentInput param);
+
+        Task<TorrentSoftPost> RutorTorrentTest(DriverRutorTorrentInput param);
     }
 }

@@ -8,6 +8,11 @@ namespace AyanaWebApi.Models
     public class TorrentSoftAddPostTestInput
     {
         /// <summary>
+        /// Id готового для выкладывания поста
+        /// </summary>
+        public int TorrentSoftPostId { get; set; }
+
+        /// <summary>
         /// Основной адрес сайта
         /// </summary>
         public string BaseAddress { get; set; }

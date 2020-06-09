@@ -25,11 +25,32 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Подготавливает распрашеный пост к выкладыванию
+        /// Подготавливает распрашеный пост к выкладыванию и сохраняет его в базу
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
         public async Task<TorrentSoftPost> RutorTorrent(DriverRutorTorrentInput param)
+        {
+            TorrentSoftPost post = await RutorTorrentTest(param);
+            if (post != null)
+            {
+                _context.TorrentSoftPosts.Add(post);
+                _context.SaveChanges();
+                foreach (var item in post.Screenshots)
+                {
+                    item.TorrentSoftPost = null;
+                }
+                return post;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Подготавливает распрашеный пост к выкладыванию
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public async Task<TorrentSoftPost> RutorTorrentTest(DriverRutorTorrentInput param)
         {
             RutorItem rutorItem = _context
                                   .RutorItems
@@ -82,12 +103,20 @@ namespace AyanaWebApi.Services
                     (from el in _context.ImghostParsingInputs
                      where el.Active == true
                      select el).ToList();
-                post.Screenshots = 
+                List<string> screenshots = 
                     (await _imghostService.GetOriginalsUri(new ImghostGetOriginalsInput
                     {
                         ImgsUri = queryUriImgs,
                         ParsingParams = queryParams,
                     })).ToList();
+                var queryScr =
+                    (from el in screenshots
+                     select new TorrentSoftPostScreenshot
+                     {
+                         Created = DateTime.Now,
+                         ScreenUri = el,
+                     }).ToList();
+                post.Screenshots = queryScr;
 
                 post.Description = FormatDescription(rutorItem.Description, post.PosterImg);
                 post.Spoilers = FormatSpoilers(rutorItem.Spoilers);
