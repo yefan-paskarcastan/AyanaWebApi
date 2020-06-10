@@ -28,7 +28,7 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("AddPostTest")]
-        public async Task<ActionResult<string>> AddPostTest([FromBody]TorrentSoftAddPostTestInput inputParam)
+        public async Task<ActionResult<string>> AddPostTest([FromBody]TorrentSoftAddPostInput inputParam)
         {
             bool result = await _torrentSoftService.AddPostTest(inputParam);
             if (result)

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace AyanaWebApi.Models
 {
-    public class TorrentSoftAddPostTestInput
+    public class TorrentSoftAddPostInput
     {
         /// <summary>
         /// Id готового для выкладывания поста
