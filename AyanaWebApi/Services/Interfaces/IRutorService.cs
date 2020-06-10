@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using AyanaWebApi.Models;
 
-namespace AyanaWebApi.Services
+namespace AyanaWebApi.Services.Interfaces
 {
     public interface IRutorService
     {

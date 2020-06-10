@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 using AyanaWebApi.Models;
-using AyanaWebApi.Services;
+using AyanaWebApi.Services.Interfaces;
 
 namespace AyanaWebApi.Controllers
 {

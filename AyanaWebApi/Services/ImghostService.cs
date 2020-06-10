@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using HtmlAgilityPack;
 
 using AyanaWebApi.Models;
+using AyanaWebApi.Services.Interfaces;
 
 namespace AyanaWebApi.Services
 {

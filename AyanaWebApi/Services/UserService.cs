@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Utils;
+using AyanaWebApi.Services.Interfaces;
 
 namespace AyanaWebApi.Services
 {

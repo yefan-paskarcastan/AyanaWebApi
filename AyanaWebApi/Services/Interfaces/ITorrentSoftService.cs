@@ -1,8 +1,7 @@
 ﻿using System.Threading.Tasks;
-
 using AyanaWebApi.Models;
 
-namespace AyanaWebApi.Services
+namespace AyanaWebApi.Services.Interfaces
 {
     public interface ITorrentSoftService
     {
