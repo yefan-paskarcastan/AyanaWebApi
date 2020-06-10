@@ -19,10 +19,12 @@ namespace AyanaWebApi.Services
     public class DriverService : IDriverService
     {
         public DriverService(AyDbContext ayDbContext,
-                             IImghostService imghostService)
+                             IImghostService imghostService,
+                             IImgsConverterService imgsConverterService)
         {
             _context = ayDbContext;
             _imghostService = imghostService;
+            _imgsConverter = imgsConverterService;
         }
 
         /// <summary>
@@ -94,6 +96,11 @@ namespace AyanaWebApi.Services
                     _context.SaveChanges();
                     return null;
                 }
+                FileInfo img = new FileInfo(posterFile);
+                if (img.Length > param.MaxPosterSize * 1024)
+                {
+                    posterFile = _imgsConverter.ConvertToJpg(posterFile, 100);
+                }
                 post.PosterImg = posterFile;
 
                 var queryUriImgs =
@@ -138,6 +145,8 @@ namespace AyanaWebApi.Services
         readonly AyDbContext _context;
 
         readonly IImghostService _imghostService;
+
+        readonly IImgsConverterService _imgsConverter;
 
         /// <summary>
         /// Загружает файл в локальную папку

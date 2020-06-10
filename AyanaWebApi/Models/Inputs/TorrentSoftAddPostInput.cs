@@ -7,6 +7,8 @@ namespace AyanaWebApi.Models
 {
     public class TorrentSoftAddPostInput
     {
+        public IList<int> TorrentSoftPostList { get; set; }
+
         /// <summary>
         /// Id готового для выкладывания поста
         /// </summary>

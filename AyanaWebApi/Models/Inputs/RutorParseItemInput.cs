@@ -1,7 +1,22 @@
-﻿namespace AyanaWebApi.Models
+﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace AyanaWebApi.Models
 {
+    /// <summary>
+    /// Найстройки для парсинга поста
+    /// </summary>
     public class RutorParseItemInput
     {
+        public int Id { get; set; }
+
+        public DateTime Created { get; set; }
+
+        /// <summary>
+        /// Действующая настройка
+        /// </summary>
+        public bool Active { get; set; }
+
         /// <summary>
         /// Шаблон адреса страницы с раздачей
         /// </summary>
@@ -35,6 +50,7 @@
         /// <summary>
         /// Id объекта листа, по которму будет строится адрес страницы
         /// </summary>
+        [NotMapped]
         public int ListItemId { get; set; }
     }
 }

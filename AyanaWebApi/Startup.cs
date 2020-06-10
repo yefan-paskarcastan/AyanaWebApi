@@ -68,6 +68,7 @@ namespace AyanaWebApi
             services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<IImghostService, ImghostService>();
             services.AddScoped<IImgsConverterService, ImgsConverterService>();
+            services.AddScoped<IListPostsHandlerService, ListPostsHandlerService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

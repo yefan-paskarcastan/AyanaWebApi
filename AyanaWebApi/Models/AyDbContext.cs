@@ -32,8 +32,12 @@ namespace AyanaWebApi.Models
 
         public DbSet<RutorItemImg> RutorItemImgs { get; set; }
 
+        public DbSet<TorrentSoftPost> TorrentSoftPosts { get; set; }
+
         public DbSet<ImghostParsingInput> ImghostParsingInputs { get; set; }
 
-        public DbSet<TorrentSoftPost> TorrentSoftPosts { get; set; }
+        public DbSet<RutorParseItemInput> RutorParseItemInputs { get; set; }
+
+        public DbSet<DriverRutorTorrentInput> DriverRutorTorrentInputs { get; set; }
     }
 }

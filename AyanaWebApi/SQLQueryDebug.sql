@@ -1,7 +1,10 @@
 ﻿
 select *
 from RutorListItems
-order by AddedDate desc
+order by AddedDate desc, Created desc
+
+select *
+from RutorItems
 
 select *
 from TorrentSoftPosts
@@ -9,6 +12,5 @@ from TorrentSoftPosts
 select *
 from logs
 
-update TorrentSoftPosts
-set TorrentFile = ''
-where Id = 2
+select *
+from RutorParseItemInputs
