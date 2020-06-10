@@ -6,6 +6,8 @@ using System.Net;
 using System.Net.Http;
 using System.Web;
 using System.Net.Http.Headers;
+using System.IO;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 using AyanaWebApi.Models;
@@ -31,23 +33,62 @@ namespace AyanaWebApi.Services
         /// <returns></returns>
         public async Task<bool> AddPostTest(TorrentSoftAddPostTestInput inputParam)
         {
+            TorrentSoftPost post =
+                _context.TorrentSoftPosts
+                        .Include(el => el.Screenshots)
+                        .SingleOrDefault(el => el.Id == inputParam.TorrentSoftPostId);
+            if (post == null)
+            {
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "TorrentSoftService / AddPostTest / Выкладывание поста",
+                    Message = $"Не удалось найти указанный обработанный пост в базе.",
+                });
+                _context.SaveChanges();
+                return false;
+            }
+
             _httpClient.BaseAddress = new Uri(inputParam.BaseAddress);
             string userHash = await Authorize(inputParam);
             TorrentSoftFileUploadResult torrentUploadResult = await UploadFile(inputParam,
-                                                                               "program.torrent",
-                                                                               "program.torrent",
+                                                                               Path.GetFileName(post.TorrentFile),
+                                                                               post.TorrentFile,
                                                                                userHash,
                                                                                inputParam.TorrentUploadQueryString);
+            if (!torrentUploadResult.Success)
+            {
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "TorrentSoftService / AddPostTest / Выкладывание поста",
+                    Message = $"Не удалось загрузить торрент файл на сайт",
+                    StackTrace = torrentUploadResult.Returnbox,
+                });
+                _context.SaveChanges();
+                return false;
+            }
+
             TorrentSoftFileUploadResult imgUploadResult = await UploadFile(inputParam,
-                                                                           "img.jpg",
-                                                                           "img.jpg",
+                                                                           Path.GetFileName(post.PosterImg),
+                                                                           post.PosterImg,
                                                                            userHash,
                                                                            inputParam.PosterUploadQueryString);
-            if (imgUploadResult.Success && torrentUploadResult.Success)
+
+            if (!imgUploadResult.Success)
             {
-                return await AddPost(inputParam, imgUploadResult, userHash);
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "TorrentSoftService / AddPostTest / Выкладывание поста",
+                    Message = $"Не удалось загрузить постер на сайт",
+                    StackTrace = imgUploadResult.Returnbox,
+                });
+                _context.SaveChanges();
+                return false;
             }
-            return false;
+            
+            return await AddPost(inputParam, imgUploadResult, userHash, post);
         }
 
         #region Private
@@ -112,7 +153,20 @@ namespace AyanaWebApi.Services
             var result = await _httpClient.PostAsync(fullAddrUploadFile, form);
 
             var contents = await result.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<TorrentSoftFileUploadResult>(contents);
+            TorrentSoftFileUploadResult uploadResult = JsonConvert.DeserializeObject<TorrentSoftFileUploadResult>(contents);
+
+            if (!uploadResult.Success)
+            {
+                _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "TorrentSoftService / UploadFile / Загрузка файла",
+                    Message = "Не удалось загрузить файл на сайт. Имя файла на сервере: " + fullPathFileOnServer,
+                    StackTrace = contents,
+                });
+                _context.SaveChanges();
+            }
+            return uploadResult;
         }
 
         /// <summary>
@@ -123,14 +177,25 @@ namespace AyanaWebApi.Services
         /// <returns></returns>
         async Task<bool> AddPost(TorrentSoftAddPostTestInput inputParam,
                                  TorrentSoftFileUploadResult imgUploadResult,
-                                 string userHash)
+                                 string userHash,
+                                 TorrentSoftPost post)
         {
             IEnumerable<KeyValuePair<string, string>> formContent = inputParam.FormData;
             var manualContent = new Dictionary<string, string>
             {
+                {inputParam.AddPostFormNameHeader, post.Name },
+                {inputParam.AddPostFormDescriptionHeader, post.Description + post.Spoilers },
                 {inputParam.AddPostFormPosterHeader, imgUploadResult.Xfvalue},
                 {inputParam.UserHashHttpHeaderName, userHash}
             };
+
+            string startKey = inputParam.AddPostFormScreenshotTemplateStartHeader;
+            string endKey = inputParam.AddPostFormScreenshotTemplateEndHeader;
+            for (int i = 1; i < inputParam.AddPostFormMaxCountScreenshots
+                            && i < post.Screenshots.Count; i++)
+            {
+                manualContent.Add(startKey + i + endKey, post.Screenshots[i - 1].ScreenUri);
+            }
             var content = new FormUrlEncodedContent(formContent.Union(manualContent));
 
             var result = await _httpClient.PostAsync(inputParam.AddPostAddress, content);

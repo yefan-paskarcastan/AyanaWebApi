@@ -65,7 +65,7 @@ namespace AyanaWebApi.Services
                 post.Name = rutorItem.Name;
 
                 string torrentFile = await DownloadFile(param.TorrentUri + rutorItem.RutorListItem.HrefNumber,
-                                                        rutorItem.Name + ".torrent",
+                                                        Path.GetRandomFileName().Replace('.', '_') + ".torrent",
                                                         param.ProxySocks5Addr,
                                                         param.ProxySocks5Port);
                 if (torrentFile == null)

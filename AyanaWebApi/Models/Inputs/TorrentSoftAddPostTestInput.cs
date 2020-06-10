@@ -54,6 +54,31 @@ namespace AyanaWebApi.Models
         public string AddPostFormPosterHeader { get; set; }
 
         /// <summary>
+        /// Элемент формы для добавления поста, в котором будет имя поста
+        /// </summary>
+        public string AddPostFormNameHeader { get; set; }
+        
+        /// <summary>
+        /// Элемент формы для добавления поста, в котором будет основная информация о посте
+        /// </summary>
+        public string AddPostFormDescriptionHeader { get; set; }
+
+        /// <summary>
+        /// Шаблон элемента формы для добавления поста, основная часть
+        /// </summary>
+        public string AddPostFormScreenshotTemplateStartHeader { get; set; }
+
+        /// <summary>
+        /// Шаблон элемента формы для добавления поста, конец строки
+        /// </summary>
+        public string AddPostFormScreenshotTemplateEndHeader { get; set; }
+
+        /// <summary>
+        /// Максимальное количество скриншотов, которые можно прикерпить
+        /// </summary>
+        public int AddPostFormMaxCountScreenshots { get; set; }
+
+        /// <summary>
         /// Заголовок для запроса, в котором будут содержаться двоичные данные файла
         /// </summary>
         public string AddPostFormFileHeader { get; set; }
