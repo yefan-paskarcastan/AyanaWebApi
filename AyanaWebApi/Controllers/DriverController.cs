@@ -28,6 +28,10 @@ namespace AyanaWebApi.Controllers
             TorrentSoftPost result = await _driverService.RutorTorrent(param);
             if (result != null)
             {
+                foreach (var item in result.Screenshots)
+                {
+                    item.TorrentSoftPost = null;
+                }
                 return Ok(result);
             }
             return BadRequest("Сервису не удалось получить готовый пост");
@@ -39,6 +43,10 @@ namespace AyanaWebApi.Controllers
             TorrentSoftPost result = await _driverService.RutorTorrentTest(param);
             if (result != null)
             {
+                foreach (var item in result.Screenshots)
+                {
+                    item.TorrentSoftPost = null;
+                }
                 return Ok(result);
             }
             return BadRequest("Сервису не удалось получить готовый пост");

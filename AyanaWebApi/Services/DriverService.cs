@@ -39,10 +39,6 @@ namespace AyanaWebApi.Services
             {
                 _context.TorrentSoftPosts.Add(post);
                 _context.SaveChanges();
-                foreach (var item in post.Screenshots)
-                {
-                    item.TorrentSoftPost = null;
-                }
                 return post;
             }
             return null;
@@ -320,7 +316,7 @@ namespace AyanaWebApi.Services
                 var item = nodesImgs.Where(el => el.GetAttributeValue("src", null)
                                                     .Contains(Path.GetFileName(poster)))
                                                     .SingleOrDefault();
-                item.Remove();
+                item?.Remove();
             }
             else
             {

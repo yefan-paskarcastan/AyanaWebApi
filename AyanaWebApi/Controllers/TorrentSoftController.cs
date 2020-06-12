@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
+using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Controllers
 {
@@ -30,8 +31,8 @@ namespace AyanaWebApi.Controllers
         [HttpPost("AddPostTest")]
         public async Task<ActionResult<string>> AddPostTest([FromBody]TorrentSoftAddPostInput inputParam)
         {
-            bool result = await _torrentSoftService.AddPostTest(inputParam);
-            if (result)
+            TorrentSoftAddPostResult result = await _torrentSoftService.AddPostTest(inputParam);
+            if (result == TorrentSoftAddPostResult.Success)
             {
                 return Ok("Пост успешно добавлен");
             }

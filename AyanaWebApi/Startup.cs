@@ -62,6 +62,11 @@ namespace AyanaWebApi
                 };
             });
 
+            services.AddHttpClient("torrentSoft", c =>
+            {
+                c.BaseAddress = new Uri("https://torrent-soft.net");
+            });
+
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRutorService, RutorService>();
             services.AddScoped<ITorrentSoftService, TorrentSoftService>();

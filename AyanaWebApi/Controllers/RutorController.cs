@@ -27,6 +27,15 @@ namespace AyanaWebApi.Controllers
             RutorItem item = await _rutorService.ParseItem(parseParam);
             if (item != null)
             {
+                foreach (var img in item.Imgs)
+                {
+                    img.RutorItem = null;
+                }
+                foreach (var spl in item.Spoilers)
+                {
+                    spl.RutorItem = null;
+                }
+                item.RutorListItem = null;
                 return Ok(item);
             }
             return BadRequest("Не удалось распарсить");
@@ -38,6 +47,15 @@ namespace AyanaWebApi.Controllers
             RutorItem item = await _rutorService.ParseItemTest(parseParam);
             if (item != null)
             {
+                foreach (var img in item.Imgs)
+                {
+                    img.RutorItem = null;
+                }
+                foreach (var spl in item.Spoilers)
+                {
+                    spl.RutorItem = null;
+                }
+                item.RutorListItem = null;
                 return Ok(item);
             }
             return BadRequest("Не удалось распарсить. Указанный id раздачи неверен или не удалось загрузить страницу");

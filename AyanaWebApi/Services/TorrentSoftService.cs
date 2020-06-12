@@ -18,13 +18,12 @@ namespace AyanaWebApi.Services
 {
     public class TorrentSoftService : ITorrentSoftService
     {
-        public TorrentSoftService(AyDbContext context)
+        public TorrentSoftService(AyDbContext context,
+                                  IHttpClientFactory clientFactory)
         {
             _context = context;
 
-            var handler = new HttpClientHandler();
-            handler.CookieContainer = new CookieContainer();
-            _httpClient = new HttpClient(handler);
+            _httpClient = clientFactory.CreateClient("torrentSoft");
         }
 
         /// <summary>
@@ -32,7 +31,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        public async Task<bool> AddPostTest(TorrentSoftAddPostInput inputParam)
+        public async Task<TorrentSoftAddPostResult> AddPostTest(TorrentSoftAddPostInput inputParam)
         {
             TorrentSoftPost post =
                 _context.TorrentSoftPosts
@@ -47,10 +46,9 @@ namespace AyanaWebApi.Services
                     Message = $"Не удалось найти указанный обработанный пост в базе.",
                 });
                 _context.SaveChanges();
-                return false;
+                return TorrentSoftAddPostResult.Faild;
             }
 
-            _httpClient.BaseAddress = new Uri(inputParam.BaseAddress);
             string userHash = await Authorize(inputParam);
             TorrentSoftFileUploadResult torrentUploadResult = await UploadFile(inputParam,
                                                                                Path.GetFileName(post.TorrentFile),
@@ -67,7 +65,7 @@ namespace AyanaWebApi.Services
                     StackTrace = torrentUploadResult.Returnbox,
                 });
                 _context.SaveChanges();
-                return false;
+                return TorrentSoftAddPostResult.TorrentFileError;
             }
 
             TorrentSoftFileUploadResult imgUploadResult = await UploadFile(inputParam,
@@ -86,10 +84,12 @@ namespace AyanaWebApi.Services
                     StackTrace = imgUploadResult.Returnbox,
                 });
                 _context.SaveChanges();
-                return false;
+                return TorrentSoftAddPostResult.Faild;
             }
             
-            return await AddPost(inputParam, imgUploadResult, userHash, post);
+            bool result = await AddPost(inputParam, imgUploadResult, userHash, post);
+            if (result) return TorrentSoftAddPostResult.Success;
+            return TorrentSoftAddPostResult.Faild;
         }
 
         #region Private

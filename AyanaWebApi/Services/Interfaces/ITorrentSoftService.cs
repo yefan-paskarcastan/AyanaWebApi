@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
+
 using AyanaWebApi.Models;
+using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services.Interfaces
 {
@@ -10,6 +12,6 @@ namespace AyanaWebApi.Services.Interfaces
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        Task<bool> AddPostTest(TorrentSoftAddPostInput inputParam);
+        Task<TorrentSoftAddPostResult> AddPostTest(TorrentSoftAddPostInput inputParam);
     }
 }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
+using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services
 {
@@ -42,8 +43,8 @@ namespace AyanaWebApi.Services
                     return "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.Id;
 
                 param.TorrentSoftPostId = post.Id;
-                bool result = await _torrentSoftService.AddPostTest(param);
-                if (!result)
+                TorrentSoftAddPostResult result = await _torrentSoftService.AddPostTest(param);
+                if (result == TorrentSoftAddPostResult.Faild)
                     return "Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id;
             }
             return "Посты успешно добавлены.";
