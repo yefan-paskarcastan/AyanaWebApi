@@ -37,21 +37,6 @@ namespace AyanaWebApi.Controllers
             return BadRequest("Сервису не удалось получить готовый пост");
         }
 
-        [HttpPost("RutorTorrentTest")]
-        public async Task<ActionResult<TorrentSoftPost>> RutorTorrentTest(DriverRutorTorrentInput param)
-        {
-            TorrentSoftPost result = await _driverService.RutorTorrentTest(param);
-            if (result != null)
-            {
-                foreach (var item in result.Screenshots)
-                {
-                    item.TorrentSoftPost = null;
-                }
-                return Ok(result);
-            }
-            return BadRequest("Сервису не удалось получить готовый пост");
-        }
-
         readonly IDriverService _driverService;
     }
 }
