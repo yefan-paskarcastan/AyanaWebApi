@@ -28,13 +28,13 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Подготавливает распрашеный пост к выкладыванию и сохраняет его в базу
+        /// Получает пост и сохраняет его в базу
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
         public async Task<TorrentSoftPost> RutorTorrent(DriverRutorTorrentInput param)
         {
-            TorrentSoftPost post = await RutorTorrentTest(param);
+            TorrentSoftPost post = await RutorTorrentGet(param);
             if (post != null)
             {
                 _context.TorrentSoftPosts.Add(post);
@@ -44,12 +44,19 @@ namespace AyanaWebApi.Services
             return null;
         }
 
+        #region Private
+        readonly AyDbContext _context;
+
+        readonly IImghostService _imghostService;
+
+        readonly IImgsConverterService _imgsConverter;
+
         /// <summary>
         /// Подготавливает распрашеный пост к выкладыванию
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<TorrentSoftPost> RutorTorrentTest(DriverRutorTorrentInput param)
+        async Task<TorrentSoftPost> RutorTorrentGet(DriverRutorTorrentInput param)
         {
             RutorItem rutorItem = _context
                                   .RutorItems
@@ -136,13 +143,6 @@ namespace AyanaWebApi.Services
             _context.SaveChanges();
             return null;
         }
-
-        #region Private
-        readonly AyDbContext _context;
-
-        readonly IImghostService _imghostService;
-
-        readonly IImgsConverterService _imgsConverter;
 
         /// <summary>
         /// Загружает файл в локальную папку

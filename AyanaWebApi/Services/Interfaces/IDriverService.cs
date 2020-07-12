@@ -6,8 +6,11 @@ namespace AyanaWebApi.Services.Interfaces
 {
     public interface IDriverService
     {
+        /// <summary>
+        /// Получает пост и сохраняет его в базу
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
         Task<TorrentSoftPost> RutorTorrent(DriverRutorTorrentInput param);
-
-        Task<TorrentSoftPost> RutorTorrentTest(DriverRutorTorrentInput param);
     }
 }
