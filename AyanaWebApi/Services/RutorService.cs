@@ -33,7 +33,7 @@ namespace AyanaWebApi.Services
         /// <returns></returns>
         public async Task<RutorItem> ParseItem(RutorParseItemInput param)
         {
-            RutorItem item = await ParseItemTest(param);
+            RutorItem item = await ParsePageItem(param);
             if (item != null)
             {
                 _context.RutorItems.Add(item);
@@ -52,13 +52,58 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
+        /// Проверит список раздач рутора и записать в базу
+        /// </summary>
+        /// <param name="uri">Ссылка на список рутора</param>
+        /// <param name="xpathExp">Выражение xpath для парсинга</param>
+        /// <returns></returns>
+        public async Task<IList<RutorListItem>> CheckList(RutorCheckListInput param)
+        {
+            IList<RutorListItem> items = await GetListItems(param);
+            if (items != null)
+            {
+                if (_context.RutorListItems.Count() == 0)
+                {
+                    await _context.RutorListItems.AddRangeAsync(items);
+                    await _context.SaveChangesAsync();
+                    return items;
+                }
+                IList<RutorListItem> oldItems = 
+                    _context
+                    .RutorListItems
+                    .OrderByDescending(d => d.AddedDate)
+                    .Take(100)
+                    .ToList();
+                IList<RutorListItem> onlyNew = 
+                    items
+                    .Except(oldItems, new RutorListItemComaprer())
+                    .ToList();
+
+                await _context.RutorListItems.AddRangeAsync(onlyNew);
+                await _context.SaveChangesAsync();
+                return onlyNew;
+            }
+            _context.Logs.Add(new Log
+                {
+                    Created = DateTime.Now,
+                    Location = "RutorService / CheckList / Работа с новым и существующим списком раздач",
+                    Message = "При получении полного списка раздач вернулось null",
+                });
+            _context.SaveChanges();
+            return null;
+        }
+
+        #region Private
+        readonly AyDbContext _context;
+
+        /// <summary>
         /// Парсит указанную раздачу
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<RutorItem> ParseItemTest(RutorParseItemInput param)
+        async Task<RutorItem> ParsePageItem(RutorParseItemInput param)
         {
-            RutorListItem listItem = 
+            RutorListItem listItem =
                 _context
                 .RutorListItems
                 .SingleOrDefault(el => el.Id == param.ListItemId);
@@ -120,62 +165,6 @@ namespace AyanaWebApi.Services
             _context.SaveChanges();
             return null;
         }
-
-        /// <summary>
-        /// Возвращает список найденных раздач на странице со списком.
-        /// Проверка работоспособности
-        /// </summary>
-        /// <param name="param"></param>
-        /// <returns></returns>
-        public async Task<IList<RutorListItem>> CheckListTest(RutorCheckListInput param)
-        {
-            return await GetListItems(param);
-        }
-
-        /// <summary>
-        /// Проверит список раздач рутора и записать в базу
-        /// </summary>
-        /// <param name="uri">Ссылка на список рутора</param>
-        /// <param name="xpathExp">Выражение xpath для парсинга</param>
-        /// <returns></returns>
-        public async Task<IList<RutorListItem>> CheckList(RutorCheckListInput param)
-        {
-            IList<RutorListItem> items = await GetListItems(param);
-            if (items != null)
-            {
-                if (_context.RutorListItems.Count() == 0)
-                {
-                    await _context.RutorListItems.AddRangeAsync(items);
-                    await _context.SaveChangesAsync();
-                    return items;
-                }
-                IList<RutorListItem> oldItems = 
-                    _context
-                    .RutorListItems
-                    .OrderByDescending(d => d.AddedDate)
-                    .Take(100)
-                    .ToList();
-                IList<RutorListItem> onlyNew = 
-                    items
-                    .Except(oldItems, new RutorListItemComaprer())
-                    .ToList();
-
-                await _context.RutorListItems.AddRangeAsync(onlyNew);
-                await _context.SaveChangesAsync();
-                return onlyNew;
-            }
-            _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "RutorService / CheckList / Работа с новым и существующим списком раздач",
-                    Message = "При получении полного списка раздач вернулось null",
-                });
-            _context.SaveChanges();
-            return null;
-        }
-
-        #region Private
-        readonly AyDbContext _context;
 
         /// <summary>
         /// Возвращает веб страницу, загрузка через тор прокси
