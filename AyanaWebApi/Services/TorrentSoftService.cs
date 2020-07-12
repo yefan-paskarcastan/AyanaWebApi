@@ -27,11 +27,11 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Добавляет тестовый пост на сайт. Проверка работоспособности
+        /// Добавляет пост на сайт
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        public async Task<TorrentSoftAddPostResult> AddPostTest(TorrentSoftAddPostInput inputParam)
+        public async Task<TorrentSoftAddPostResult> AddPost(TorrentSoftAddPostInput inputParam)
         {
             TorrentSoftPost post =
                 _context.TorrentSoftPosts
@@ -87,7 +87,7 @@ namespace AyanaWebApi.Services
                 return TorrentSoftAddPostResult.Faild;
             }
             
-            bool result = await AddPost(inputParam, imgUploadResult, userHash, post);
+            bool result = await SendPost(inputParam, imgUploadResult, userHash, post);
             if (result) return TorrentSoftAddPostResult.Success;
             return TorrentSoftAddPostResult.Faild;
         }
@@ -176,7 +176,7 @@ namespace AyanaWebApi.Services
         /// <param name="inputParam"></param>
         /// <param name="imgUploadResult"></param>
         /// <returns></returns>
-        async Task<bool> AddPost(TorrentSoftAddPostInput inputParam,
+        async Task<bool> SendPost(TorrentSoftAddPostInput inputParam,
                                  TorrentSoftFileUploadResult imgUploadResult,
                                  string userHash,
                                  TorrentSoftPost post)

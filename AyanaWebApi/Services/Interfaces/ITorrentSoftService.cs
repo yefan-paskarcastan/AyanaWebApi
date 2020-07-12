@@ -8,10 +8,10 @@ namespace AyanaWebApi.Services.Interfaces
     public interface ITorrentSoftService
     {
         /// <summary>
-        /// Добавляет тестовый пост. Проверка работоспособности
+        /// Добавляет пост
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        Task<TorrentSoftAddPostResult> AddPostTest(TorrentSoftAddPostInput inputParam);
+        Task<TorrentSoftAddPostResult> AddPost(TorrentSoftAddPostInput inputParam);
     }
 }
