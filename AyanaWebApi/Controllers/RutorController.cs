@@ -41,37 +41,6 @@ namespace AyanaWebApi.Controllers
             return BadRequest("Не удалось распарсить");
         }
 
-        [HttpPost("ParseItemTest")]
-        public async Task<ActionResult<RutorItem>> ParseItemTest([FromBody]RutorParseItemInput parseParam)
-        {
-            RutorItem item = await _rutorService.ParseItemTest(parseParam);
-            if (item != null)
-            {
-                foreach (var img in item.Imgs)
-                {
-                    img.RutorItem = null;
-                }
-                foreach (var spl in item.Spoilers)
-                {
-                    spl.RutorItem = null;
-                }
-                item.RutorListItem = null;
-                return Ok(item);
-            }
-            return BadRequest("Не удалось распарсить. Указанный id раздачи неверен или не удалось загрузить страницу");
-        }
-
-        [HttpPost("CheckListTest")]
-        public async Task<ActionResult<IList<RutorListItem>>> CheckListTest([FromBody]RutorCheckListInput rutorCheckList)
-        {
-            IList<RutorListItem> list = await _rutorService.CheckListTest(rutorCheckList);
-
-            if (list != null)
-                return Ok(list);
-
-            return BadRequest("Не удалось получить список раздач");
-        }
-
         [HttpPost("CheckList")]
         public async Task<ActionResult<IList<RutorListItem>>> CheckList([FromBody]RutorCheckListInput rutorCheckList)
         {
