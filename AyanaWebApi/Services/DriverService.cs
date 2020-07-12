@@ -165,6 +165,7 @@ namespace AyanaWebApi.Services
                                     + DateTime.Today.ToString("yyyy.MM.dd");
             Directory.CreateDirectory(folderName);
             string fullName = folderName + "\\" + GetSafeFilename(fileName);
+            if (File.Exists(fullName)) return fullName;
 
             try
             {
