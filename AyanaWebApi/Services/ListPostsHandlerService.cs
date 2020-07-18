@@ -30,17 +30,17 @@ namespace AyanaWebApi.Services
                         .RutorParseItemInputs
                         .SingleOrDefault(el => el.Active);
                 paramRutorItem.ListItemId = item;
-                RutorItem rutorItem = await _rutorService.ParseItem(paramRutorItem);
-                if (rutorItem == null)
+                ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
+                if (rutorItem.ResultObj == null)
                     return "Не удалось распарсить пост RutorItem. ListItemId = " + item;
 
                 DriverRutorTorrentInput driverTorrentInput = _context
                                                 .DriverRutorTorrentInputs
                                                 .SingleOrDefault(el => el.Active);
-                driverTorrentInput.ParseItemId = rutorItem.Id;
+                driverTorrentInput.ParseItemId = rutorItem.ResultObj.Id;
                 TorrentSoftPost post = await _driverService.RutorTorrent(driverTorrentInput);
                 if (post == null)
-                    return "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.Id;
+                    return "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
 
                 param.TorrentSoftPostId = post.Id;
                 TorrentSoftAddPostResult result = await _torrentSoftService.AddPost(param);

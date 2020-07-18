@@ -21,9 +21,11 @@ namespace AyanaWebApi.Services
     /// </summary>
     public class RutorService : IRutorService
     {
-        public RutorService(AyDbContext ayDbContext)
+        public RutorService(AyDbContext ayDbContext,
+                            ILogService logService)
         {
             _context = ayDbContext;
+            _logs = logService;
         }
 
         /// <summary>
@@ -31,38 +33,39 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<RutorItem> ParseItem(RutorParseItemInput param)
+        public async Task<ServiceResult<RutorItem>> ParseItem(RutorParseItemInput param)
         {
-            RutorItem item = await ParsePageItem(param);
-            if (item != null)
+            ServiceResult<RutorItem> item = await ParsePageItem(param);
+            item.ServiceName = nameof(RutorService);
+            item.Location = "Парсинг раздачи";
+
+            if (item.ResultObj != null)
             {
-                _context.RutorItems.Add(item);
+                _context.RutorItems.Add(item.ResultObj);
                 _context.SaveChanges();
                 return item;
             }
 
-            _context.Logs.Add(new Log
-            {
-                Created = DateTime.Now,
-                Location = "RutorService / ParseItem / Парсинг раздачи",
-                Message = "Не удалось распрарсить раздачу",
-            });
-            _context.SaveChanges();
-            return null;
+            item.Comment = "Не удалось распрарсить раздачу";
+            _logs.Write(item);
+            return item;
         }
 
         /// <summary>
         /// Проверит список раздач рутора и вернуть новые
         /// </summary>
         /// <returns></returns>
-        public async Task<IList<RutorListItem>> CheckList(RutorCheckListInput param)
+        public async Task<ServiceResult<IList<RutorListItem>>> CheckList(RutorCheckListInput param)
         {
-            IList<RutorListItem> items = await GetListItems(param);
-            if (items != null)
+            ServiceResult<IList<RutorListItem>> items = await GetListItems(param);
+            items.ServiceName = nameof(RutorService);
+            items.Location = "Работа с новым и существующим списком раздач";
+
+            if (items.ResultObj != null)
             {
                 if (_context.RutorListItems.Count() == 0)
                 {
-                    await _context.RutorListItems.AddRangeAsync(items);
+                    await _context.RutorListItems.AddRangeAsync(items.ResultObj);
                     await _context.SaveChangesAsync();
                     return items;
                 }
@@ -73,34 +76,36 @@ namespace AyanaWebApi.Services
                     .Take(100)
                     .ToList();
                 IList<RutorListItem> onlyNew = 
-                    items
+                    items.ResultObj
                     .Except(oldItems, new RutorListItemComaprer())
                     .ToList();
 
                 await _context.RutorListItems.AddRangeAsync(onlyNew);
                 await _context.SaveChangesAsync();
-                return onlyNew;
+                items.ResultObj = onlyNew;
+                return items;
             }
-            _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "RutorService / CheckList / Работа с новым и существующим списком раздач",
-                    Message = "При получении полного списка раздач вернулось null",
-                });
-            _context.SaveChanges();
-            return null;
+            items.Comment = "При получении полного списка раздач вернулось null";
+            _logs.Write(items);
+            return items;
         }
 
         #region Private
         readonly AyDbContext _context;
+
+        readonly ILogService _logs;
 
         /// <summary>
         /// Парсит указанную раздачу
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        async Task<RutorItem> ParsePageItem(RutorParseItemInput param)
+        async Task<ServiceResult<RutorItem>> ParsePageItem(RutorParseItemInput param)
         {
+            var result = new ServiceResult<RutorItem>();
+            result.ServiceName = nameof(RutorService);
+            result.Location = "Парсинг раздачи";
+
             RutorListItem listItem =
                 _context
                 .RutorListItems
@@ -108,11 +113,11 @@ namespace AyanaWebApi.Services
 
             if (listItem != null)
             {
-                string page = await GetPage(param.UriItem + listItem.HrefNumber, param.ProxySocks5Addr, param.ProxySocks5Port);
-                if (page != null)
+                ServiceResult<string> page = await GetPage(param.UriItem + listItem.HrefNumber, param.ProxySocks5Addr, param.ProxySocks5Port);
+                if (page.ResultObj != null)
                 {
                     var htmlDocument = new HtmlDocument();
-                    htmlDocument.LoadHtml(page);
+                    htmlDocument.LoadHtml(page.ResultObj);
 
                     List<RutorItemSpoiler> listSpoiler = GetSpoilers(htmlDocument,
                                                                      param.XPathExprSpoiler);
@@ -125,17 +130,13 @@ namespace AyanaWebApi.Services
 
                     if (description == null || listImgs == null)
                     {
-                        _context.Logs.Add(new Log
-                        {
-                            Created = DateTime.Now,
-                            Location = $"RutorService / ParseItemTest / Парсинг раздачи / Id - {listItem.Id} / Href - {listItem.HrefNumber}",
-                            Message = "Не удалось получить описани раздачи или ее изображения. Проверьте XPath или загружаемую страницу.",
-                        });
-                        _context.SaveChanges();
-                        return null;
+                        result.Comment = "Не удалось получить описани раздачи или ее изображения";
+                        result.ErrorContent = $"RutorListItemId - {listItem.Id} / Href - {listItem.HrefNumber}";
+                        _logs.Write(result);
+                        return result;
                     }
 
-                    return new RutorItem
+                    result.ResultObj =  new RutorItem
                     {
                         Created = DateTime.Now,
                         Name = listItem.Name,
@@ -144,24 +145,16 @@ namespace AyanaWebApi.Services
                         Imgs = listImgs,
                         RutorListItemId = param.ListItemId,
                     };
+                    return result;
                 }
-                _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = $"RutorService / ParseItemTest / Парсинг раздачи / Id - {listItem.Id} / Href - {listItem.HrefNumber}",
-                    Message = "Не удалось получить веб страницу с раздачей",
-                });
-                _context.SaveChanges();
-                return null;
+                result.Comment = "Не удалось получить веб страницу с раздачей";
+                result.ErrorContent = result.ErrorContent = $"RutorListItemId - {listItem.Id} / Href - {listItem.HrefNumber}";
+                _logs.Write(result);
+                return result;
             }
-            _context.Logs.Add(new Log
-            {
-                Created = DateTime.Now,
-                Location = "RutorService / ParseItemTest / Парсинг раздачи",
-                Message = "Не удалось найти в базе раздачу из списка с указнным Id",
-            });
-            _context.SaveChanges();
-            return null;
+            result.Comment = "Не удалось найти в базе раздачу из списка с указнным Id";
+            _logs.Write(result);
+            return result;
         }
 
         /// <summary>
@@ -171,7 +164,7 @@ namespace AyanaWebApi.Services
         /// <param name="address">Socks5 адрес прокси</param>
         /// <param name="port">Порт прокси</param>
         /// <returns>Веб страница, если произошла ошибка возвращает null</returns>
-        async Task<string> GetPage(string uri, string address, int port)
+        async Task<ServiceResult<string>> GetPage(string uri, string address, int port)
         {
             var result = new ServiceResult<string>();
             var webClient = new WebClient();
@@ -188,18 +181,12 @@ namespace AyanaWebApi.Services
                 result.Comment = "Указан неврный адрес или произошла другая сетевая ошибка";
                 result.Location = "Загрузка веб страницы";
                 result.ExceptionMessage = ex.Message;
-                _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "Rutor Service / Get Page / Загрузка веб страницы",
-                    Message = "При загрузке произошла ошибка. Указан неврный адрес или произошла другая сетевая ошибка",
-                    StackTrace = ex.StackTrace
-                });
-                _context.SaveChanges();
+                _logs.Write(result);
+                return result;
             }
             
-            if (data != null) return Encoding.UTF8.GetString(data);
-            return null;
+            if (data != null) result.ResultObj = Encoding.UTF8.GetString(data);
+            return result;
         }
 
         /// <summary>
@@ -207,13 +194,17 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        async Task<IList<RutorListItem>> GetListItems(RutorCheckListInput param)
+        async Task<ServiceResult<IList<RutorListItem>>> GetListItems(RutorCheckListInput param)
         {
-            string page = await GetPage(param.UriList, param.ProxySocks5Addr, param.ProxySocks5Port);
-            if (page != null)
+            var result = new ServiceResult<IList<RutorListItem>>();
+            result.ServiceName = nameof(RutorService);
+            result.Location = "Получение полного списка раздач с рутора";
+
+            ServiceResult<string> page = await GetPage(param.UriList, param.ProxySocks5Addr, param.ProxySocks5Port);
+            if (page.ResultObj != null)
             {
                 var htmlDocument = new HtmlDocument();
-                htmlDocument.LoadHtml(page);
+                htmlDocument.LoadHtml(page.ResultObj);
                 HtmlNodeCollection nodesDate = htmlDocument.DocumentNode.SelectNodes(param.XPathExprItemDate);
                 HtmlNodeCollection nodesUniqNumber = htmlDocument.DocumentNode.SelectNodes(param.XPathExprItemUniqNumber);
                 HtmlNodeCollection nodesName = htmlDocument.DocumentNode.SelectNodes(param.XPathExprItemName);
@@ -239,26 +230,16 @@ namespace AyanaWebApi.Services
                                 Split(param.XPathParamSplitSeparator)[param.XPathParamSplitIndex],
                             Name = HttpUtility.HtmlDecode(name.InnerText),
                         };
-                    return postQuery.ToList();
+                    result.ResultObj = postQuery.ToList();
+                    return result;
                 }
-                _context.Logs.Add(
-                    new Log()
-                    {
-                        Created = DateTime.Now,
-                        Location = "RutorService / GetListItems / Получение полного списка раздач с рутора",
-                        Message = "XPath выражение вернуло null. Нужные объекты не найдены.",
-                    });
-                _context.SaveChanges();
-                return null;
+                result.Comment = "XPath выражение вернуло null";
+                _logs.Write(result);
+                return result;
             }
-            _context.Logs.Add(new Log
-            {
-                Created = DateTime.Now,
-                Location = "RutorService / GetListItems / Получение полного списка раздач с рутора",
-                Message = "При получении веб страницы вернулось null"
-            });
-            _context.SaveChanges();
-            return null;
+            result.Comment = "При получении веб страницы вернулось null";
+            _logs.Write(result);
+            return result;
         }
 
         /// <summary>
@@ -275,13 +256,13 @@ namespace AyanaWebApi.Services
 
             if (nodeDescription == null)
             {
-                _context.Logs.Add(new Log
+                var srResult = new ServiceResult<string>
                 {
-                    Created = DateTime.Now,
-                    Location = "RutorService / GetDescription / Парсинг описания раздачи",
-                    Message = "Не удалось найти описание раздачи по указанному XPath выражению",
-                });
-                _context.SaveChanges();
+                    ServiceName = nameof(RutorService),
+                    Location = "Парсинг описания раздачи",
+                    Comment = "Не удалось найти описание раздачи по указанному XPath выражению"
+                };
+                _logs.Write(srResult);
                 return null;
             }
 
@@ -307,13 +288,13 @@ namespace AyanaWebApi.Services
 
             if (nodeSpoilers == null) 
             {
-                _context.Logs.Add(new Log
+                var srResult = new ServiceResult<string>
                 {
-                    Created = DateTime.Now,
-                    Location = "RutorService / GetSpoilers / Парсинг раздачи / Парсинг спойлеров",
-                    Message = "Не удалось найти спойлеры на странице с раздачей",
-                });
-                _context.SaveChanges();
+                    ServiceName = nameof(RutorService),
+                    Location = "Парсинг раздачи / Парсинг спойлеров",
+                    Comment = "Не удалось найти спойлеры на странице с раздачей"
+                };
+                _logs.Write(srResult);
                 return null; 
             }
 
@@ -368,13 +349,13 @@ namespace AyanaWebApi.Services
 
             if (nodeImgs == null)
             {
-                _context.Logs.Add(new Log
+                var srResult = new ServiceResult<string>
                 {
-                    Created = DateTime.Now,
-                    Location = "RutorService / GetImgs / Парсинг раздачи / Получение изображений из описания",
-                    Message = "Не удалось найти ни одного изображения в описании раздачи",
-                });
-                _context.SaveChanges();
+                    ServiceName = nameof(RutorService),
+                    Location = "Парсинг раздачи / Получение изображений из описания",
+                    Comment = "Не удалось найти ни одного изображения в описании раздачи"
+                };
+                _logs.Write(srResult);
                 return null; 
             }
 

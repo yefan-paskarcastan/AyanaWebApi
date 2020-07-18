@@ -3,6 +3,10 @@ using System.Runtime.CompilerServices;
 
 namespace AyanaWebApi.Utils
 {
+    /// <summary>
+    /// Результат выполения сервиса
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class ServiceResult<T> : IServiceResult
                  where T : class
     {

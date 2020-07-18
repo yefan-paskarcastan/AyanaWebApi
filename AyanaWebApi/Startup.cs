@@ -67,6 +67,7 @@ namespace AyanaWebApi
                 c.BaseAddress = new Uri("https://torrent-soft.net");
             });
 
+            services.AddScoped<ILogService, LogService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRutorService, RutorService>();
             services.AddScoped<ITorrentSoftService, TorrentSoftService>();

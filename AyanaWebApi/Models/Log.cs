@@ -37,7 +37,7 @@ namespace AyanaWebApi.Models
         /// <summary>
         /// Имя метода, где создавался результат
         /// </summary>
-        public string MethodName { get; }
+        public string MethodName { get; set; }
 
         /// <summary>
         /// Место возникновения ошибки
