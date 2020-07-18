@@ -52,10 +52,8 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Проверит список раздач рутора и записать в базу
+        /// Проверит список раздач рутора и вернуть новые
         /// </summary>
-        /// <param name="uri">Ссылка на список рутора</param>
-        /// <param name="xpathExp">Выражение xpath для парсинга</param>
         /// <returns></returns>
         public async Task<IList<RutorListItem>> CheckList(RutorCheckListInput param)
         {
@@ -175,6 +173,7 @@ namespace AyanaWebApi.Services
         /// <returns>Веб страница, если произошла ошибка возвращает null</returns>
         async Task<string> GetPage(string uri, string address, int port)
         {
+            var result = new ServiceResult<string>();
             var webClient = new WebClient();
             webClient.Proxy = new HttpToSocks5Proxy(address, port);
 
@@ -185,6 +184,10 @@ namespace AyanaWebApi.Services
             }
             catch (WebException ex)
             {
+                result.ServiceName = nameof(RutorService);
+                result.Comment = "Указан неврный адрес или произошла другая сетевая ошибка";
+                result.Location = "Загрузка веб страницы";
+                result.ExceptionMessage = ex.Message;
                 _context.Logs.Add(new Log
                 {
                     Created = DateTime.Now,

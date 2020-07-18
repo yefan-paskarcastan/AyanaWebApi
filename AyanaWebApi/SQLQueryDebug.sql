@@ -5,10 +5,11 @@ order by AddedDate desc, Created desc
 
 select *
 from RutorItems
-where id = 242
+where id = 538
 
 select *
 from TorrentSoftPosts
+where id = 494
 
 select *
 from logs

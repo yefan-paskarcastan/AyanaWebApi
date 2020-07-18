@@ -43,7 +43,7 @@ namespace AyanaWebApi.Services
                 {
                     Created = DateTime.Now,
                     Location = "TorrentSoftService / AddPostTest / Выкладывание поста",
-                    Message = $"Не удалось найти указанный обработанный пост в базе.",
+                    Message = "Не удалось найти указанный обработанный пост в базе.",
                 });
                 _context.SaveChanges();
                 return TorrentSoftAddPostResult.Faild;
