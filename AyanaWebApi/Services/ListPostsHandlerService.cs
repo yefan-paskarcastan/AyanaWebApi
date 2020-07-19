@@ -43,8 +43,11 @@ namespace AyanaWebApi.Services
                     return "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
 
                 param.TorrentSoftPostId = post.Id;
-                TorrentSoftAddPostResult result = await _torrentSoftService.AddPost(param);
-                if (result == TorrentSoftAddPostResult.Faild)
+                ServiceResult<TorrentSoftResult> result = await _torrentSoftService.AddPost(param);
+                if (result.ResultObj.TorrentSoftPost == null
+                    || !result.ResultObj.SendPostIsSuccess
+                    || !result.ResultObj.PosterIsSuccess
+                    || !result.ResultObj.TorrentFileIsSuccess)
                     return "Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id;
             }
             return "Посты успешно добавлены.";

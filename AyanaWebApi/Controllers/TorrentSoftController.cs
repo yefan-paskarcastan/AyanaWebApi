@@ -31,8 +31,11 @@ namespace AyanaWebApi.Controllers
         [HttpPost("AddPost")]
         public async Task<ActionResult<string>> AddPost([FromBody]TorrentSoftAddPostInput inputParam)
         {
-            TorrentSoftAddPostResult result = await _torrentSoftService.AddPost(inputParam);
-            if (result == TorrentSoftAddPostResult.Success)
+            ServiceResult<TorrentSoftResult> result = await _torrentSoftService.AddPost(inputParam);
+            if (result.ResultObj.TorrentSoftPost != null
+                && result.ResultObj.SendPostIsSuccess
+                && result.ResultObj.PosterIsSuccess
+                && result.ResultObj.TorrentFileIsSuccess)
             {
                 return Ok("Пост успешно добавлен");
             }

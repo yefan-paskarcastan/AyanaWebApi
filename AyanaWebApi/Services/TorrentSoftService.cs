@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Net;
 using System.Net.Http;
 using System.Web;
 using System.Net.Http.Headers;
@@ -32,23 +31,35 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        public async Task<TorrentSoftAddPostResult> AddPost(TorrentSoftAddPostInput inputParam)
+        public async Task<ServiceResult<TorrentSoftResult>> AddPost(TorrentSoftAddPostInput inputParam)
         {
+            var result = new TorrentSoftResult
+            {
+                Created = DateTime.Now,
+                TorrentSoftPostId = inputParam.TorrentSoftPostId,
+                TorrentSoftPost = null,
+                PosterIsSuccess = false,
+                TorrentFileIsSuccess = false,
+                SendPostIsSuccess = false
+            };
+
+            var serviceResult = new ServiceResult<TorrentSoftResult>();
+            serviceResult.ServiceName = nameof(TorrentSoftService);
+            serviceResult.Location = "Публикация поста";
+            serviceResult.ResultObj = result;
+
             TorrentSoftPost post =
                 _context.TorrentSoftPosts
                         .Include(el => el.Screenshots)
                         .SingleOrDefault(el => el.Id == inputParam.TorrentSoftPostId);
             if (post == null)
             {
-                _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "TorrentSoftService / AddPostTest / Выкладывание поста",
-                    Message = "Не удалось найти указанный обработанный пост в базе.",
-                });
-                _context.SaveChanges();
-                return TorrentSoftAddPostResult.Faild;
+                serviceResult.Comment = "Не удалось найти указанный подготовленный пост в базе";
+                serviceResult.ErrorContent = "TorrentSoftPostId = " + inputParam.TorrentSoftPostId;
+                _logService.Write(serviceResult);
+                return serviceResult;
             }
+            result.TorrentSoftPost = post;
 
             string userHash = await Authorize(inputParam);
             TorrentSoftFileUploadResult torrentUploadResult = await UploadFile(inputParam,
@@ -58,16 +69,12 @@ namespace AyanaWebApi.Services
                                                                                inputParam.TorrentUploadQueryString);
             if (!torrentUploadResult.Success)
             {
-                _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "TorrentSoftService / AddPostTest / Выкладывание поста",
-                    Message = $"Не удалось загрузить торрент файл на сайт",
-                    StackTrace = torrentUploadResult.Returnbox,
-                });
-                _context.SaveChanges();
-                return TorrentSoftAddPostResult.TorrentFileError;
+                serviceResult.Comment = "Не удалось загрузить торрент файл на сайт";
+                serviceResult.ErrorContent = torrentUploadResult.Returnbox;
+                _logService.Write(serviceResult);
+                return serviceResult;
             }
+            result.TorrentFileIsSuccess = true;
 
             TorrentSoftFileUploadResult imgUploadResult = await UploadFile(inputParam,
                                                                            Path.GetFileName(post.PosterImg),
@@ -76,20 +83,21 @@ namespace AyanaWebApi.Services
                                                                            inputParam.PosterUploadQueryString);
             if (!imgUploadResult.Success)
             {
-                _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "TorrentSoftService / AddPostTest / Выкладывание поста",
-                    Message = $"Не удалось загрузить постер на сайт",
-                    StackTrace = imgUploadResult.Returnbox,
-                });
-                _context.SaveChanges();
-                return TorrentSoftAddPostResult.Faild;
+                serviceResult.Comment = "Не удалось загрузить постер на сайт";
+                serviceResult.ErrorContent = imgUploadResult.Returnbox;
+                _logService.Write(serviceResult);
+                return serviceResult;
             }
+            result.PosterIsSuccess = true;
             
-            bool result = await SendPost(inputParam, imgUploadResult, userHash, post);
-            if (result) return TorrentSoftAddPostResult.Success;
-            return TorrentSoftAddPostResult.Faild;
+            result.SendPostIsSuccess = await SendPost(inputParam, imgUploadResult, userHash, post);
+            if(!result.SendPostIsSuccess)
+            {
+                serviceResult.Comment = "Не удалось отправить пост на сайт";
+                serviceResult.ErrorContent = imgUploadResult.Returnbox;
+                _logService.Write(serviceResult);
+            }
+            return serviceResult;
         }
 
         #region Private
@@ -136,7 +144,7 @@ namespace AyanaWebApi.Services
             HttpContent content = new StringContent(inputParam.AddPostFormFileHeader);
             form.Add(content, inputParam.AddPostFormFileHeader);
 
-            content = new StreamContent(System.IO.File.OpenRead(fullPathFileOnServer));
+            content = new StreamContent(File.OpenRead(fullPathFileOnServer));
             content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
             {
                 Name = inputParam.AddPostFormFileHeader,
@@ -160,14 +168,12 @@ namespace AyanaWebApi.Services
 
             if (!uploadResult.Success)
             {
-                _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "TorrentSoftService / UploadFile / Загрузка файла",
-                    Message = "Не удалось загрузить файл на сайт. Имя файла на сервере: " + fullPathFileOnServer,
-                    StackTrace = contents,
-                });
-                _context.SaveChanges();
+                var serviceResult = new ServiceResult<string>();
+                serviceResult.ServiceName = nameof(TorrentSoftService);
+                serviceResult.Location = "Загрузка файла";
+                serviceResult.Comment = "Не удалось загрузить файл на сайт";
+                serviceResult.ErrorContent = "Имя файла на сервере: " + fullPathFileOnServer;
+                _logService.Write(serviceResult);
             }
             return uploadResult;
         }

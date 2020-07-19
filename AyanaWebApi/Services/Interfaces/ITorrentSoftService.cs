@@ -12,6 +12,6 @@ namespace AyanaWebApi.Services.Interfaces
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        Task<TorrentSoftAddPostResult> AddPost(TorrentSoftAddPostInput inputParam);
+        Task<ServiceResult<TorrentSoftResult>> AddPost(TorrentSoftAddPostInput inputParam);
     }
 }
