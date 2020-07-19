@@ -1,6 +1,7 @@
 ﻿
 select *
 from RutorListItems
+--where HrefNumber = '366503'
 order by AddedDate desc, Created desc
 
 select *
@@ -48,3 +49,6 @@ insert into DriverRutorTorrentInputs(Created, Active,
 values (CURRENT_TIMESTAMP, 1, 
 		'http://rutorc6mqdinc4cz.onion/download/', 300,
 		9050, '127.0.0.1')
+
+select *
+from ImghostParsingInputs

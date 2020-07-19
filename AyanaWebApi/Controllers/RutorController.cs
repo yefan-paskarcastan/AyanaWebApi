@@ -23,7 +23,7 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("ParseItem")]
-        public async Task<ActionResult<RutorItem>> ParseItem([FromBody] RutorParseItemInput parseParam)
+        public async Task<ActionResult<RutorItem>> ParseItem([FromBody]RutorParseItemInput parseParam)
         {
             ServiceResult<RutorItem> item = await _rutorService.ParseItem(parseParam);
             if (item.ResultObj != null)

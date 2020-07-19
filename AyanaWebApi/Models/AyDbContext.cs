@@ -34,6 +34,8 @@ namespace AyanaWebApi.Models
 
         public DbSet<TorrentSoftPost> TorrentSoftPosts { get; set; }
 
+        public DbSet<TorrentSoftResult> TorrentSoftResults { get; set; }
+
         #region Tables of setting
         public DbSet<ImghostParsingInput> ImghostParsingInputs { get; set; }
 

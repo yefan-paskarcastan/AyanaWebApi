@@ -19,11 +19,12 @@ namespace AyanaWebApi.Services
     public class TorrentSoftService : ITorrentSoftService
     {
         public TorrentSoftService(AyDbContext context,
-                                  IHttpClientFactory clientFactory)
+                                  IHttpClientFactory clientFactory,
+                                  ILogService logService)
         {
             _context = context;
-
             _httpClient = clientFactory.CreateClient("torrentSoft");
+            _logService = logService;
         }
 
         /// <summary>
@@ -73,7 +74,6 @@ namespace AyanaWebApi.Services
                                                                            post.PosterImg,
                                                                            userHash,
                                                                            inputParam.PosterUploadQueryString);
-
             if (!imgUploadResult.Success)
             {
                 _context.Logs.Add(new Log
@@ -96,6 +96,8 @@ namespace AyanaWebApi.Services
         readonly AyDbContext _context;
 
         readonly HttpClient _httpClient;
+
+        readonly ILogService _logService;
 
         /// <summary>
         /// Авторизоваться на сайте
