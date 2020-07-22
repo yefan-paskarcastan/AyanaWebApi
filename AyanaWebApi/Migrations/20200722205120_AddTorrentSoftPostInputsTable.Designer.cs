@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AyanaWebApi.Migrations
 {
     [DbContext(typeof(AyDbContext))]
-    [Migration("20200722204009_AddTorrentSoftPostInputsTable")]
+    [Migration("20200722205120_AddTorrentSoftPostInputsTable")]
     partial class AddTorrentSoftPostInputsTable
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -369,7 +369,7 @@ namespace AyanaWebApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TorrentSoftAddPostInputs");
+                    b.ToTable("TorrentSoftPostInputs");
                 });
 
             modelBuilder.Entity("AyanaWebApi.Models.TorrentSoftPostScreenshot", b =>

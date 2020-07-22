@@ -7,7 +7,7 @@ namespace AyanaWebApi.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "TorrentSoftAddPostInputs",
+                name: "TorrentSoftPostInputs",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
@@ -34,14 +34,14 @@ namespace AyanaWebApi.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TorrentSoftAddPostInputs", x => x.Id);
+                    table.PrimaryKey("PK_TorrentSoftPostInputs", x => x.Id);
                 });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "TorrentSoftAddPostInputs");
+                name: "TorrentSoftPostInputs");
         }
     }
 }

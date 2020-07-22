@@ -45,7 +45,7 @@ namespace AyanaWebApi.Models
 
         public DbSet<DictionaryValue> DictionaryValues { get; set; }
 
-        public DbSet<TorrentSoftPostInput> TorrentSoftAddPostInputs { get; set; }
+        public DbSet<TorrentSoftPostInput> TorrentSoftPostInputs { get; set; }
         #endregion
     }
 }

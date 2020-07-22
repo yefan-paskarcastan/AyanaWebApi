@@ -13,9 +13,12 @@ namespace AyanaWebApi.Models
 
         public int Id { get; set; }
 
+        public bool Active { get; set; }
+
         /// <summary>
         /// Id готового для выкладывания поста
         /// </summary>
+        [NotMapped]
         public int TorrentSoftPostId { get; set; }
 
         /// <summary>
