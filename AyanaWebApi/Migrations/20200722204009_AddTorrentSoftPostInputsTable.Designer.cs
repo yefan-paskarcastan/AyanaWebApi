@@ -4,14 +4,16 @@ using AyanaWebApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace AyanaWebApi.Migrations
 {
     [DbContext(typeof(AyDbContext))]
-    partial class AyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200722204009_AddTorrentSoftPostInputsTable")]
+    partial class AddTorrentSoftPostInputsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -22,7 +22,7 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("Published")]
-        public async Task<ActionResult<string>> Published([FromBody] TorrentSoftAddPostInput inputParam)
+        public async Task<ActionResult<string>> Published([FromBody] TorrentSoftPostInput inputParam)
         {
             return await _listServices.Published(inputParam);
         }

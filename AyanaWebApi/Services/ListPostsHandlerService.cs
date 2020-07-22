@@ -22,7 +22,7 @@ namespace AyanaWebApi.Services
             _torrentSoftService = torrentSoftService;
         }
 
-        public async Task<string> Published(TorrentSoftAddPostInput param)
+        public async Task<string> Published(TorrentSoftPostInput param)
         {
             foreach (int item in param.TorrentSoftPostList)
             {

@@ -8,6 +8,6 @@ namespace AyanaWebApi.Services.Interfaces
 {
     public interface IListPostsHandlerService
     {
-        Task<string> Published(TorrentSoftAddPostInput param);
+        Task<string> Published(TorrentSoftPostInput param);
     }
 }

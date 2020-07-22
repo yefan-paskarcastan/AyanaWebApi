@@ -42,6 +42,10 @@ namespace AyanaWebApi.Models
         public DbSet<RutorParseItemInput> RutorParseItemInputs { get; set; }
 
         public DbSet<DriverRutorTorrentInput> DriverRutorTorrentInputs { get; set; }
+
+        public DbSet<DictionaryValue> DictionaryValues { get; set; }
+
+        public DbSet<TorrentSoftPostInput> TorrentSoftAddPostInputs { get; set; }
         #endregion
     }
 }

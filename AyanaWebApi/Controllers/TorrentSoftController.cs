@@ -29,7 +29,7 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("AddPost")]
-        public async Task<ActionResult<string>> AddPost([FromBody]TorrentSoftAddPostInput inputParam)
+        public async Task<ActionResult<string>> AddPost([FromBody]TorrentSoftPostInput inputParam)
         {
             ServiceResult<TorrentSoftResult> result = await _torrentSoftService.AddPost(inputParam);
             if (result.ResultObj.TorrentSoftPost != null

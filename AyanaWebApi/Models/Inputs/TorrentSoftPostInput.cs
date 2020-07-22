@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace AyanaWebApi.Models
 {
-    public class TorrentSoftAddPostInput
+    public class TorrentSoftPostInput
     {
+        [NotMapped]
         public IList<int> TorrentSoftPostList { get; set; }
+
+        public int Id { get; set; }
 
         /// <summary>
         /// Id готового для выкладывания поста
@@ -85,24 +89,36 @@ namespace AyanaWebApi.Models
         /// </summary>
         public string AddPostFormFileHeader { get; set; }
 
+        public string FormDataId { get; set; }
+
+        public string PosterUploadQueryStringId { get; set; }
+
+        public string TorrentUploadQueryStringId { get; set; }
+
+        public string AuthDataId { get; set; }
+
         /// <summary>
         /// Параметры формы для добавления поста
         /// </summary>
+        [NotMapped]
         public Dictionary<string, string> FormData { get; set; }
 
         /// <summary>
         /// Квери стринг для загрукзи постера
         /// </summary>
+        [NotMapped]
         public Dictionary<string, string> PosterUploadQueryString { get; set; }
 
         /// <summary>
         /// Квери стринг для загрузки торрент файла
         /// </summary>
+        [NotMapped]
         public Dictionary<string, string> TorrentUploadQueryString { get; set; }
 
         /// <summary>
         /// Данные для авторизации на сайте
         /// </summary>
+        [NotMapped]
         public Dictionary<string, string> AuthData { get; set; }
     }
 }

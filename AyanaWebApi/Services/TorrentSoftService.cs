@@ -31,7 +31,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<TorrentSoftResult>> AddPost(TorrentSoftAddPostInput inputParam)
+        public async Task<ServiceResult<TorrentSoftResult>> AddPost(TorrentSoftPostInput inputParam)
         {
             var result = new TorrentSoftResult
             {
@@ -112,7 +112,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="inputParam">Параметры доступа к сайту</param>
         /// <returns>Возвращает хеш пользователя, который нужно добавлять к некоторым запросам. Если авторизвация не успешна - null</returns>
-        async Task<string> Authorize(TorrentSoftAddPostInput inputParam)
+        async Task<string> Authorize(TorrentSoftPostInput inputParam)
         {
             IEnumerable<KeyValuePair<string, string>> formContent = inputParam.AuthData;
             var content = new FormUrlEncodedContent(formContent);
@@ -134,7 +134,7 @@ namespace AyanaWebApi.Services
         /// <param name="httpFormFileName"></param>
         /// <param name="fullPathFileOnServer"></param>
         /// <returns></returns>
-        async Task<TorrentSoftFileUploadResult> UploadFile(TorrentSoftAddPostInput inputParam,
+        async Task<TorrentSoftFileUploadResult> UploadFile(TorrentSoftPostInput inputParam,
                                                            string httpFormFileName,
                                                            string fullPathFileOnServer,
                                                            string userHash,
@@ -184,7 +184,7 @@ namespace AyanaWebApi.Services
         /// <param name="inputParam"></param>
         /// <param name="imgUploadResult"></param>
         /// <returns></returns>
-        async Task<bool> SendPost(TorrentSoftAddPostInput inputParam,
+        async Task<bool> SendPost(TorrentSoftPostInput inputParam,
                                  TorrentSoftFileUploadResult imgUploadResult,
                                  string userHash,
                                  TorrentSoftPost post)

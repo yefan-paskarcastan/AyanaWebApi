@@ -4,14 +4,16 @@ using AyanaWebApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace AyanaWebApi.Migrations
 {
     [DbContext(typeof(AyDbContext))]
-    partial class AyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200722192811_AddDictionaryValuesTable")]
+    partial class AddDictionaryValuesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -299,75 +301,6 @@ namespace AyanaWebApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("TorrentSoftPosts");
-                });
-
-            modelBuilder.Entity("AyanaWebApi.Models.TorrentSoftPostInput", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("AddPostAddress")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AddPostFormDescriptionHeader")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AddPostFormFileHeader")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("AddPostFormMaxCountScreenshots")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AddPostFormNameHeader")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AddPostFormPosterHeader")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AddPostFormScreenshotTemplateEndHeader")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AddPostFormScreenshotTemplateStartHeader")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AuthDataId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("BaseAddress")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FormDataId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PosterUploadQueryStringId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TorrentSoftPostId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TorrentUploadQueryStringId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UploadFileAddress")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserHashExStringCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserHashFindVarName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserHashHttpHeaderName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserHashLength")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TorrentSoftAddPostInputs");
                 });
 
             modelBuilder.Entity("AyanaWebApi.Models.TorrentSoftPostScreenshot", b =>
