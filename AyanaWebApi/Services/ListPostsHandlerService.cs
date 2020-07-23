@@ -35,8 +35,7 @@ namespace AyanaWebApi.Services
             foreach (RutorListItem item in rutorListItem.ResultObj)
             {
                 RutorParseItemInput paramRutorItem = 
-                    _context
-                    .RutorParseItemInputs
+                    _context.RutorParseItemInputs
                     .Single(el => el.Active);
                 paramRutorItem.ListItemId = item.Id;
                 ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
@@ -44,8 +43,7 @@ namespace AyanaWebApi.Services
                     return "Не удалось распарсить пост RutorItem. ListItemId = " + item.Id;
 
                 DriverRutorTorrentInput driverTorrentInput =
-                    _context
-                    .DriverRutorTorrentInputs
+                    _context.DriverRutorTorrentInputs
                     .Single(el => el.Active);
                 driverTorrentInput.ParseItemId = rutorItem.ResultObj.Id;
                 TorrentSoftPost post = await _driverService.RutorTorrent(driverTorrentInput);
@@ -53,10 +51,25 @@ namespace AyanaWebApi.Services
                     return "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
 
                 TorrentSoftPostInput torrentSoftPostInput =
-                    _context
-                    .TorrentSoftPostInputs
+                    _context.TorrentSoftPostInputs
                     .Single(el => el.Active);
                 torrentSoftPostInput.TorrentSoftPostId = post.Id;
+                torrentSoftPostInput.PosterUploadQueryString =
+                    _context.DictionaryValues
+                    .Where(el => el.DictionaryName == torrentSoftPostInput.PosterUploadQueryStringId)
+                    .ToDictionary(k => k.Key, v => v.Value);
+                torrentSoftPostInput.TorrentUploadQueryString =
+                    _context.DictionaryValues
+                    .Where(el => el.DictionaryName == torrentSoftPostInput.TorrentUploadQueryStringId)
+                    .ToDictionary(k => k.Key, v => v.Value);
+                torrentSoftPostInput.FormData =
+                    _context.DictionaryValues
+                    .Where(el => el.DictionaryName == torrentSoftPostInput.FormDataId)
+                    .ToDictionary(k => k.Key, v => v.Value);
+                torrentSoftPostInput.AuthData =
+                    _context.DictionaryValues
+                    .Where(el => el.DictionaryName == torrentSoftPostInput.AuthDataId)
+                    .ToDictionary(k => k.Key, v => v.Value);
                 ServiceResult<TorrentSoftResult> result = await _torrentSoftService.AddPost(torrentSoftPostInput);
                 if (result.ResultObj.TorrentSoftPost == null
                     || !result.ResultObj.SendPostIsSuccess
