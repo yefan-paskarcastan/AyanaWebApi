@@ -21,10 +21,10 @@ namespace AyanaWebApi.Controllers
             _listServices = listServices;
         }
 
-        [HttpPost("Published")]
-        public async Task<ActionResult<string>> Published([FromBody] TorrentSoftPostInput inputParam)
+        [HttpPost("Publishing")]
+        public async Task<ActionResult<string>> Publishing()
         {
-            return await _listServices.Published(inputParam);
+            return await _listServices.Publishing();
         }
 
         readonly IListPostsHandlerService _listServices;

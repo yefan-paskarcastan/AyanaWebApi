@@ -22,28 +22,42 @@ namespace AyanaWebApi.Services
             _torrentSoftService = torrentSoftService;
         }
 
-        public async Task<string> Published(TorrentSoftPostInput param)
+        public async Task<string> Publishing()
         {
-            foreach (int item in param.TorrentSoftPostList)
+            RutorCheckListInput rutorCheckListInput =
+                _context
+                .RutorCheckListInputs
+                .Single(el => el.Active);
+            ServiceResult<IList<RutorListItem>> rutorListItem = await _rutorService.CheckList(rutorCheckListInput);
+            if (rutorListItem.ResultObj == null)
+                return "Не удалось проверить список раздач rutor. RutorCheckListInputId = " + rutorCheckListInput.Id;
+
+            foreach (RutorListItem item in rutorListItem.ResultObj)
             {
-                RutorParseItemInput paramRutorItem = _context
-                        .RutorParseItemInputs
-                        .SingleOrDefault(el => el.Active);
-                paramRutorItem.ListItemId = item;
+                RutorParseItemInput paramRutorItem = 
+                    _context
+                    .RutorParseItemInputs
+                    .Single(el => el.Active);
+                paramRutorItem.ListItemId = item.Id;
                 ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
                 if (rutorItem.ResultObj == null)
-                    return "Не удалось распарсить пост RutorItem. ListItemId = " + item;
+                    return "Не удалось распарсить пост RutorItem. ListItemId = " + item.Id;
 
-                DriverRutorTorrentInput driverTorrentInput = _context
-                                                .DriverRutorTorrentInputs
-                                                .SingleOrDefault(el => el.Active);
+                DriverRutorTorrentInput driverTorrentInput =
+                    _context
+                    .DriverRutorTorrentInputs
+                    .Single(el => el.Active);
                 driverTorrentInput.ParseItemId = rutorItem.ResultObj.Id;
                 TorrentSoftPost post = await _driverService.RutorTorrent(driverTorrentInput);
                 if (post == null)
                     return "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
 
-                param.TorrentSoftPostId = post.Id;
-                ServiceResult<TorrentSoftResult> result = await _torrentSoftService.AddPost(param);
+                TorrentSoftPostInput torrentSoftPostInput =
+                    _context
+                    .TorrentSoftPostInputs
+                    .Single(el => el.Active);
+                torrentSoftPostInput.TorrentSoftPostId = post.Id;
+                ServiceResult<TorrentSoftResult> result = await _torrentSoftService.AddPost(torrentSoftPostInput);
                 if (result.ResultObj.TorrentSoftPost == null
                     || !result.ResultObj.SendPostIsSuccess
                     || !result.ResultObj.PosterIsSuccess
@@ -53,15 +67,9 @@ namespace AyanaWebApi.Services
             return "Посты успешно добавлены.";
         }
 
-        #region Private
         AyDbContext _context;
-
         IRutorService _rutorService;
-
         IDriverService _driverService;
-
         ITorrentSoftService _torrentSoftService;
-
-        #endregion
     }
 }

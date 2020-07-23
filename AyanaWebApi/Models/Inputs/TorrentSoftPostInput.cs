@@ -8,18 +8,9 @@ namespace AyanaWebApi.Models
 {
     public class TorrentSoftPostInput
     {
-        [NotMapped]
-        public IList<int> TorrentSoftPostList { get; set; }
-
         public int Id { get; set; }
 
         public bool Active { get; set; }
-
-        /// <summary>
-        /// Id готового для выкладывания поста
-        /// </summary>
-        [NotMapped]
-        public int TorrentSoftPostId { get; set; }
 
         /// <summary>
         /// Основной адрес сайта
@@ -99,6 +90,12 @@ namespace AyanaWebApi.Models
         public string TorrentUploadQueryStringId { get; set; }
 
         public string AuthDataId { get; set; }
+
+        /// <summary>
+        /// Id готового для выкладывания поста
+        /// </summary>
+        [NotMapped]
+        public int TorrentSoftPostId { get; set; }
 
         /// <summary>
         /// Параметры формы для добавления поста

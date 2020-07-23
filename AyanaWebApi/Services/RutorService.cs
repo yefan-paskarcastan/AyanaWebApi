@@ -73,7 +73,7 @@ namespace AyanaWebApi.Services
                     _context
                     .RutorListItems
                     .OrderByDescending(d => d.AddedDate)
-                    .Take(150)
+                    .Take(200)
                     .ToList();
                 IList<RutorListItem> onlyNew = 
                     items.ResultObj
