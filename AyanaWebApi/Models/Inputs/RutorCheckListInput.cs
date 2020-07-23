@@ -1,10 +1,18 @@
-﻿namespace AyanaWebApi.Models
+﻿using System;
+
+namespace AyanaWebApi.Models
 {
     /// <summary>
     /// Парамерты для проверки списка разадач
     /// </summary>
     public class RutorCheckListInput
     {
+        public int Id { get; set; }
+
+        public DateTime Created { get; set; }
+
+        public bool Active { get; set; }
+
         /// <summary>
         /// Адрес страницы со список разадч
         /// </summary>

@@ -1,7 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace AyanaWebApi.Models
+﻿namespace AyanaWebApi.Models
 {
     public class DictionaryValue
     {
