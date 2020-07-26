@@ -8,14 +8,15 @@ using HtmlAgilityPack;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
+using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services
 {
     public class ImghostService : IImghostService
     {
-        public ImghostService(AyDbContext ayDbContext)
+        public ImghostService(LogService logService)
         {
-            _context = ayDbContext;
+            _logService = logService;
         }
 
         /// <summary>
@@ -55,14 +56,14 @@ namespace AyanaWebApi.Services
             }
             catch (WebException ex)
             {
-                _context.Logs.Add(new Log
+                var serviceResult = new ServiceResult<string>
                 {
-                    Created = DateTime.Now,
-                    Location = "Imghost Service / Get Page / Загрузка веб страницы",
-                    Message = "При загрузке произошла ошибка. Указан неврный адрес или произошла другая сетевая ошибка",
-                    StackTrace = ex.StackTrace
-                });
-                _context.SaveChanges();
+                    ServiceName = "ImghostService",
+                    Location = "Загрузка веб страницы",
+                    Comment = "Указан неврный адрес или произошла другая сетевая ошибка",
+                    ExceptionMessage = ex.Message
+                };
+                _logService.Write(serviceResult);
                 return null;
             }
 
@@ -78,6 +79,12 @@ namespace AyanaWebApi.Services
         /// <returns></returns>
         async Task<string> GetOriginalUriImg(string uri, string xPath, string htmlAttr)
         {
+            var serviceResult = new ServiceResult<string>
+            {
+                ServiceName = "ImghostService",
+                Location = "Выпрямитель ссылок с хостинга картинок"
+            };
+
             string page = await GetPage(uri);
             if (page != null)
             {
@@ -90,25 +97,17 @@ namespace AyanaWebApi.Services
                     string[] withoutQueryString = fullUriImg.Split('?');
                     return withoutQueryString[0];
                 }
-                _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "Imghost Service / Standart Img Handler / Получение прямой ссылки на изображение",
-                    Message = $"Не удалось однозначно определить изображение на странице. Неверное XPath выражение. Uri: {uri}",
-                });
-                _context.SaveChanges();
+                serviceResult.Comment = "Неверное XPath выражение";
+                serviceResult.ErrorContent = $"Uri: {uri}";
+                _logService.Write(serviceResult);
                 return uri;
             }
-            _context.Logs.Add(new Log
-            {
-                Created = DateTime.Now,
-                Location = "Imghost Service / Standart Img Handler / Получение прямой ссылки на изображение",
-                Message = "При загрузке произошла ошибка. Указан неврный адрес или произошла другая сетевая ошибка",
-            });
-            _context.SaveChanges();
+            serviceResult.Comment = "Указан неврный адрес или произошла другая сетевая ошибка";
+            serviceResult.ErrorContent = $"Uri: {uri}";
+            _logService.Write(serviceResult);
             return uri;
         }
 
-        readonly AyDbContext _context;
+        readonly ILogService _logService;
     }
 }
