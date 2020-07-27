@@ -14,7 +14,7 @@ namespace AyanaWebApi.Services
 {
     public class ImghostService : IImghostService
     {
-        public ImghostService(LogService logService)
+        public ImghostService(ILogService logService)
         {
             _logService = logService;
         }

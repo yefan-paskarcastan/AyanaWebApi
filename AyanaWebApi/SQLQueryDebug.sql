@@ -6,7 +6,8 @@ order by AddedDate desc, Created desc
 
 select *
 from RutorItems
-where id = 538
+--where id = 538
+order by Created desc
 
 select *
 from TorrentSoftPosts

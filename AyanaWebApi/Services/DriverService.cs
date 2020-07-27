@@ -13,6 +13,7 @@ using HtmlAgilityPack;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
+using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services
 {
@@ -20,11 +21,13 @@ namespace AyanaWebApi.Services
     {
         public DriverService(AyDbContext ayDbContext,
                              IImghostService imghostService,
-                             IImgsConverterService imgsConverterService)
+                             IImgsConverterService imgsConverterService,
+                             ILogService logService)
         {
             _context = ayDbContext;
             _imghostService = imghostService;
             _imgsConverter = imgsConverterService;
+            _logService = logService;
         }
 
         /// <summary>
@@ -46,10 +49,9 @@ namespace AyanaWebApi.Services
 
         #region Private
         readonly AyDbContext _context;
-
         readonly IImghostService _imghostService;
-
         readonly IImgsConverterService _imgsConverter;
+        readonly ILogService _logService;
 
         /// <summary>
         /// Подготавливает распрашеный пост к выкладыванию
@@ -58,6 +60,12 @@ namespace AyanaWebApi.Services
         /// <returns></returns>
         async Task<TorrentSoftPost> RutorTorrentGet(DriverRutorTorrentInput param)
         {
+            var serviceResult = new ServiceResult<string>
+            {
+                ServiceName = "DriverService",
+                Location = "Преобразование раздачи в пост на сайт soft"
+            };
+
             RutorItem rutorItem = _context
                                   .RutorItems
                                   .Include(el => el.RutorListItem)
@@ -69,6 +77,7 @@ namespace AyanaWebApi.Services
             {
                 var post = new TorrentSoftPost();
                 post.Name = rutorItem.Name;
+                post.Created = DateTime.Now;
 
                 string torrentFile = await DownloadFile(param.TorrentUri + rutorItem.RutorListItem.HrefNumber,
                                                         Path.GetRandomFileName().Replace('.', '_') + ".torrent",
@@ -76,13 +85,9 @@ namespace AyanaWebApi.Services
                                                         param.ProxySocks5Port);
                 if (torrentFile == null)
                 {
-                    _context.Logs.Add(new Log
-                    {
-                        Created = DateTime.Now,
-                        Location = "DriverService / Rutor Torrent / Преобразование раздачи",
-                        Message = $"Не удалось загрузить торрент файл. RutorItemId: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}",
-                    });
-                    _context.SaveChanges();
+                    serviceResult.Comment = "Не удалось загрузить торрент файл";
+                    serviceResult.ErrorContent = $"RutorItemId: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}";
+                    _logService.Write(serviceResult);
                     return null;
                 }
                 post.TorrentFile = torrentFile;
@@ -90,13 +95,9 @@ namespace AyanaWebApi.Services
                 string posterFile = await GetPosterImg(rutorItem.Imgs, param);
                 if (posterFile == null)
                 {
-                    _context.Logs.Add(new Log
-                    {
-                        Created = DateTime.Now,
-                        Location = "DriverService / Rutor Torrent / Преобразование раздачи",
-                        Message = $"Не удалось загрузить постер. RutorItemId: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}",
-                    });
-                    _context.SaveChanges();
+                    serviceResult.Comment = "Не удалось загрузить постер";
+                    serviceResult.ErrorContent = $"RutorItemId: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}";
+                    _logService.Write(serviceResult);
                     return null;
                 }
                 FileInfo img = new FileInfo(posterFile);
@@ -134,13 +135,9 @@ namespace AyanaWebApi.Services
 
                 return post;
             }
-            _context.Logs.Add(new Log
-            {
-                Created = DateTime.Now,
-                Location = "DriverService / Rutor Torrent / Преобразование раздачи",
-                Message = "В базе не найдена раздача с указанным Id",
-            });
-            _context.SaveChanges();
+            serviceResult.Comment = "В базе не найдена раздача с указанным Id";
+            serviceResult.ErrorContent = $"RutorItemId: {param.ParseItemId}";
+            _logService.Write(serviceResult);
             return null;
         }
 
@@ -157,6 +154,12 @@ namespace AyanaWebApi.Services
                                         string proxyAddress, 
                                         int proxyPort)
         {
+            var serviceResult = new ServiceResult<string>
+            {
+                ServiceName = "DriverService",
+                Location = "Загрузка файла"
+            };
+
             var webClient = new WebClient();
             webClient.Proxy = new HttpToSocks5Proxy(proxyAddress, proxyPort);
 
@@ -173,14 +176,10 @@ namespace AyanaWebApi.Services
             }
             catch (WebException ex)
             {
-                _context.Logs.Add(new Log
-                {
-                    Created = DateTime.Now,
-                    Location = "Driver Service / Download File / Загрузка файла",
-                    Message = "При загрузке произошла ошибка. Указан неврный адрес или произошла другая сетевая ошибка",
-                    StackTrace = ex.StackTrace
-                });
-                _context.SaveChanges();
+                serviceResult.Comment = "Указан неврный адрес или произошла другая сетевая ошибка";
+                serviceResult.ErrorContent = "Uri: " + uri;
+                serviceResult.ExceptionMessage = ex.Message;
+                _logService.Write(serviceResult);
                 return null;
             }
             return fullName;
@@ -205,6 +204,12 @@ namespace AyanaWebApi.Services
         async Task<string> GetPosterImg(List<RutorItemImg> listImg, 
                                         DriverRutorTorrentInput param)
         {
+            var serviceResult = new ServiceResult<string>
+            {
+                ServiceName = "DriverService",
+                Location = "Выбор постера"
+            };
+
             IList<RutorItemImg> withoutLink =
                 (from img in listImg
                  where img.ParentUrl == null && img.ChildUrl != null
@@ -221,13 +226,9 @@ namespace AyanaWebApi.Services
                                                                 param.ProxySocks5Port);
                     if (fullFileNameOne == null)
                     {
-                        _context.Logs.Add(new Log
-                        {
-                            Created = DateTime.Now,
-                            Location = "Driver Service / Get Poster Img / Загрузка постера",
-                            Message = "При загрузке постера произошла ошибка",
-                        });
-                        _context.SaveChanges();
+                        serviceResult.Comment = "При загрузке постера произошла ошибка";
+                        serviceResult.ErrorContent = "ChildImg uri: " + img.ChildUrl;
+                        _logService.Write(serviceResult);
                         return null;
                     }
                     return fullFileNameOne;
@@ -245,14 +246,10 @@ namespace AyanaWebApi.Services
                     }
                     catch (WebException ex)
                     {
-                        _context.Logs.Add(new Log
-                        {
-                            Created = DateTime.Now,
-                            Location = "Driver Service / Get Poster Img / Выбор постера",
-                            Message = $"При загрузке файла постера произошла ошибка. Url {item.ChildUrl}",
-                            StackTrace = ex.StackTrace,
-                        });
-                        _context.SaveChanges();
+                        serviceResult.Comment = "При загрузке файла постера по списку произошла ошибка";
+                        serviceResult.ErrorContent = "ChildImg uri: " + item.ChildUrl;
+                        serviceResult.ExceptionMessage = ex.Message;
+                        _logService.Write(serviceResult);
                         return null;
                     }
                     var img = new Bitmap(stream);
@@ -269,24 +266,15 @@ namespace AyanaWebApi.Services
                                                          param.ProxySocks5Port);
                 if (fullFileName == null)
                 {
-                    _context.Logs.Add(new Log
-                    {
-                        Created = DateTime.Now,
-                        Location = "Driver Service / Get Poster Img / Загрузка постера",
-                        Message = "При загрузке постера произошла ошибка",
-                    });
-                    _context.SaveChanges();
+                    serviceResult.Comment = "При загрузке постера произошла ошибка";
+                    serviceResult.ErrorContent = "Poster uri: " + posterUri;
+                    _logService.Write(serviceResult);
                     return null;
                 }
                 return fullFileName;
             }
-            _context.Logs.Add(new Log
-            {
-                Created = DateTime.Now,
-                Location = "Driver Service / Get Poster Img / Загрузка постера",
-                Message = "Не удалось выбрать подходящий постер или изображения отсутсвуют",
-            });
-            _context.SaveChanges();
+            serviceResult.Comment = "Не удалось выбрать подходящий постер или изображения отсутсвуют";
+            _logService.Write(serviceResult);
             return null;
         }
 
