@@ -324,25 +324,26 @@ namespace AyanaWebApi.Services
                                    List<RutorItemSpoiler> listSpoiler)
         {
             var imgsSpoilers = new List<RutorItemImg>();
-            foreach (var item in listSpoiler)
-            {
-                HtmlDocument document = new HtmlDocument();
-                document.LoadHtml(item.Body);
-                HtmlNodeCollection nodes = document.DocumentNode.SelectNodes(@"//img");
-                if (nodes != null)
+            if (listSpoiler != null)
+                foreach (var item in listSpoiler)
                 {
-                    foreach (var img in nodes)
+                    HtmlDocument document = new HtmlDocument();
+                    document.LoadHtml(item.Body);
+                    HtmlNodeCollection nodes = document.DocumentNode.SelectNodes(@"//img");
+                    if (nodes != null)
                     {
-                        imgsSpoilers.Add(
-                            new RutorItemImg
-                            {
-                                ParentUrl = img.ParentNode.GetAttributeValue("href", null),
-                                ChildUrl = img.GetAttributeValue("src", null),
-                                Created = DateTime.Now,
-                            });
+                        foreach (var img in nodes)
+                        {
+                            imgsSpoilers.Add(
+                                new RutorItemImg
+                                {
+                                    ParentUrl = img.ParentNode.GetAttributeValue("href", null),
+                                    ChildUrl = img.GetAttributeValue("src", null),
+                                    Created = DateTime.Now,
+                                });
+                        }
                     }
                 }
-            }
 
             HtmlNodeCollection nodeImgs =
                 doc.DocumentNode.SelectNodes(xPathImgs);
