@@ -173,6 +173,7 @@ namespace AyanaWebApi.Services
                 serviceResult.Location = "Загрузка файла";
                 serviceResult.Comment = "Не удалось загрузить файл на сайт";
                 serviceResult.ErrorContent = "Имя файла на сервере: " + fullPathFileOnServer;
+                serviceResult.ExceptionMessage = contents;
                 _logService.Write(serviceResult);
             }
             return uploadResult;
