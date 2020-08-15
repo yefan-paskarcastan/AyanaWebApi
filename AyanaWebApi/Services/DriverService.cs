@@ -82,7 +82,8 @@ namespace AyanaWebApi.Services
                 string torrentFile = await DownloadFile(param.TorrentUri + rutorItem.RutorListItem.HrefNumber,
                                                         Path.GetRandomFileName().Replace('.', '_') + ".torrent",
                                                         param.ProxySocks5Addr,
-                                                        param.ProxySocks5Port);
+                                                        param.ProxySocks5Port,
+                                                        param.ProxyActive);
                 if (torrentFile == null)
                 {
                     serviceResult.Comment = "Не удалось загрузить торрент файл";
@@ -148,11 +149,13 @@ namespace AyanaWebApi.Services
         /// <param name="fileName">Не полное имя файла с расширением</param>
         /// <param name="proxyAddress">Адрес тор прокси</param>
         /// <param name="proxyPort">Порт тор проски</param>
+        /// <param name="proxyUsing">Использовать или нет тор прокси</param>
         /// <returns></returns>
         async Task<string> DownloadFile(string uri, 
                                         string fileName, 
                                         string proxyAddress, 
-                                        int proxyPort)
+                                        int proxyPort,
+                                        bool proxyUsing)
         {
             var serviceResult = new ServiceResult<string>
             {
@@ -161,7 +164,8 @@ namespace AyanaWebApi.Services
             };
 
             var webClient = new WebClient();
-            webClient.Proxy = new HttpToSocks5Proxy(proxyAddress, proxyPort);
+            if(proxyUsing)
+                webClient.Proxy = new HttpToSocks5Proxy(proxyAddress, proxyPort);
 
             string folderName = Environment.CurrentDirectory 
                                     + "\\storage\\"
@@ -223,7 +227,8 @@ namespace AyanaWebApi.Services
                     string fullFileNameOne = await DownloadFile(img.ChildUrl,
                                                                 Path.GetFileName(img.ChildUrl),
                                                                 param.ProxySocks5Addr,
-                                                                param.ProxySocks5Port);
+                                                                param.ProxySocks5Port,
+                                                                param.ProxyActive);
                     if (fullFileNameOne == null)
                     {
                         serviceResult.Comment = "При загрузке постера произошла ошибка";
@@ -263,7 +268,8 @@ namespace AyanaWebApi.Services
                 string fullFileName = await DownloadFile(posterUri,
                                                          Path.GetFileName(posterUri),
                                                          param.ProxySocks5Addr,
-                                                         param.ProxySocks5Port);
+                                                         param.ProxySocks5Port,
+                                                         param.ProxyActive);
                 if (fullFileName == null)
                 {
                     serviceResult.Comment = "При загрузке постера произошла ошибка";

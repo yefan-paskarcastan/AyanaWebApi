@@ -113,7 +113,10 @@ namespace AyanaWebApi.Services
 
             if (listItem != null)
             {
-                ServiceResult<string> page = await GetPage(param.UriItem + listItem.HrefNumber, param.ProxySocks5Addr, param.ProxySocks5Port);
+                ServiceResult<string> page = await GetPage(param.UriItem + listItem.HrefNumber, 
+                                param.ProxySocks5Addr, 
+                                param.ProxySocks5Port,
+                                param.ProxyActive);
                 if (page.ResultObj != null)
                 {
                     var htmlDocument = new HtmlDocument();
@@ -163,12 +166,14 @@ namespace AyanaWebApi.Services
         /// <param name="uri">Адрес страницы</param>
         /// <param name="address">Socks5 адрес прокси</param>
         /// <param name="port">Порт прокси</param>
+        /// <param name="usingProxy">Использовать или нет тор прокси</param>
         /// <returns>Веб страница, если произошла ошибка возвращает null</returns>
-        async Task<ServiceResult<string>> GetPage(string uri, string address, int port)
+        async Task<ServiceResult<string>> GetPage(string uri, string address, int port, bool usingProxy)
         {
             var result = new ServiceResult<string>();
             var webClient = new WebClient();
-            webClient.Proxy = new HttpToSocks5Proxy(address, port);
+            if(usingProxy)
+                webClient.Proxy = new HttpToSocks5Proxy(address, port);
 
             byte[] data = null;
             try
@@ -200,7 +205,10 @@ namespace AyanaWebApi.Services
             result.ServiceName = nameof(RutorService);
             result.Location = "Получение полного списка раздач с рутора";
 
-            ServiceResult<string> page = await GetPage(param.UriList, param.ProxySocks5Addr, param.ProxySocks5Port);
+            ServiceResult<string> page = await GetPage(param.UriList, 
+                        param.ProxySocks5Addr, 
+                        param.ProxySocks5Port,
+                        param.ProxyActive);
             if (page.ResultObj != null)
             {
                 var htmlDocument = new HtmlDocument();
