@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace AyanaWebApi.Models
 {
@@ -39,5 +36,10 @@ namespace AyanaWebApi.Models
         /// Порт тор прокси
         /// </summary>
         public int ProxySocks5Port { get; set; }
+
+        /// <summary>
+        /// Флаг использования тор проски
+        /// </summary>
+        public bool ProxyActive { get; set; }
     }
 }

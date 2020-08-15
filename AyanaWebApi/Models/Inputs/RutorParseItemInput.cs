@@ -33,6 +33,11 @@ namespace AyanaWebApi.Models
         public int ProxySocks5Port { get; set; }
 
         /// <summary>
+        /// Флаг использования тор прокси, если истина
+        /// </summary>
+        public bool ProxyActive { get; set; }
+
+        /// <summary>
         /// XPath выражение для парсинга описания
         /// </summary>
         public string XPathExprDescription { get; set; }

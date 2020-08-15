@@ -52,5 +52,10 @@ namespace AyanaWebApi.Models
         /// Порт тор прокси
         /// </summary>
         public int ProxySocks5Port { get; set; }
+
+        /// <summary>
+        /// Флаг использования тор прокси
+        /// </summary>
+        public bool ProxyActive { get; set; }
     }
 }
