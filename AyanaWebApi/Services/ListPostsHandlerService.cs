@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
@@ -14,16 +15,35 @@ namespace AyanaWebApi.Services
         public ListPostsHandlerService(AyDbContext ayDbContext,
                                        IRutorService rutorService,
                                        IDriverService driverService,
-                                       ITorrentSoftService torrentSoftService)
+                                       ITorrentSoftService torrentSoftService,
+                                       ILogService logService)
         {
             _context = ayDbContext;
             _rutorService = rutorService;
             _driverService = driverService;
             _torrentSoftService = torrentSoftService;
+            _logService = logService;
         }
 
         public async Task<string> Publishing()
         {
+            string date = DateTime.Now.AddDays(-3).ToShortDateString();
+            IList<RutorListItem> errorList = 
+                _context
+                .RutorListItems
+                .FromSqlInterpolated($"RutorListItemsError {date}")
+                .ToList();
+
+            if (errorList.Count > 0)
+            {
+                ServiceResult<string> resultError = await Flow(errorList);
+                if (resultError.ResultObj == null)
+                {
+                    _logService.Write(resultError);
+                    return "Произошла ошибка при публикации хвостов";
+                }
+            }
+
             RutorCheckListInput rutorCheckListInput =
                 _context
                 .RutorCheckListInputs
@@ -32,15 +52,43 @@ namespace AyanaWebApi.Services
             if (rutorListItem.ResultObj == null)
                 return "Не удалось проверить список раздач rutor. RutorCheckListInputId = " + rutorCheckListInput.Id;
 
-            foreach (RutorListItem item in rutorListItem.ResultObj)
+            ServiceResult<string> result = await Flow(rutorListItem.ResultObj);
+            if (result.ResultObj == null)
             {
-                RutorParseItemInput paramRutorItem = 
+                _logService.Write(result);
+                return "Произошла ошибка при публикации презентаций";
+            }
+
+            return "Посты успешно добавлены.";
+        }
+
+        /// <summary>
+        /// Проводит операции с полученным списком презентаций по публикации на сайте soft
+        /// </summary>
+        /// <param name="lst">Список презентаций, которые были получены с rutor</param>
+        /// <returns>Если все презентации выложены успешно, то ResultObj != null</returns>
+        async Task<ServiceResult<string>> Flow(IList<RutorListItem> lst)
+        {
+            var serviceResult = new ServiceResult<string>
+            {
+                ServiceName = "ListPostsHandlerService",
+                Location = "Пакетная публикация на сайт soft",
+                ResultObj = "Success"
+            };
+
+            foreach (RutorListItem item in lst)
+            {
+                RutorParseItemInput paramRutorItem =
                     _context.RutorParseItemInputs
                     .Single(el => el.Active);
                 paramRutorItem.ListItemId = item.Id;
                 ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
                 if (rutorItem.ResultObj == null)
-                    return "Не удалось распарсить пост RutorItem. ListItemId = " + item.Id;
+                {
+                    serviceResult.Comment = "Не удалось распарсить пост RutorItem. ListItemId = " + item.Id;
+                    serviceResult.ResultObj = null;
+                    break;
+                }
 
                 DriverRutorTorrentInput driverTorrentInput =
                     _context.DriverRutorTorrentInputs
@@ -48,7 +96,11 @@ namespace AyanaWebApi.Services
                 driverTorrentInput.ParseItemId = rutorItem.ResultObj.Id;
                 TorrentSoftPost post = await _driverService.RutorTorrent(driverTorrentInput);
                 if (post == null)
-                    return "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
+                {
+                    serviceResult.Comment = "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
+                    serviceResult.ResultObj = null;
+                    break;
+                }
 
                 TorrentSoftPostInput torrentSoftPostInput =
                     _context.TorrentSoftPostInputs
@@ -75,14 +127,19 @@ namespace AyanaWebApi.Services
                     || !result.ResultObj.SendPostIsSuccess
                     || !result.ResultObj.PosterIsSuccess
                     || !result.ResultObj.TorrentFileIsSuccess)
-                    return "Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id;
+                {
+                    serviceResult.Comment = "Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id;
+                    serviceResult.ResultObj = null;
+                    break;
+                }
             }
-            return "Посты успешно добавлены.";
+            return serviceResult;
         }
 
         AyDbContext _context;
         IRutorService _rutorService;
         IDriverService _driverService;
         ITorrentSoftService _torrentSoftService;
+        ILogService _logService;
     }
 }
