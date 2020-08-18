@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AyanaWebApi", "AyanaWebApi\AyanaWebApi.csproj", "{3C4B85A1-62E7-46F1-A415-364053EF05EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TegreiUI", "TegreiUI\TegreiUI.csproj", "{F1C7A1AB-E9D0-4971-8244-4505DA35694A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TegreiUI", "TegreiUI\TegreiUI.csproj", "{F1C7A1AB-E9D0-4971-8244-4505DA35694A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
