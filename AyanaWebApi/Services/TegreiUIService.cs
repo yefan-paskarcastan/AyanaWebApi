@@ -24,9 +24,6 @@ namespace AyanaWebApi.Services
         {
             IList<RutorItem> lst =  await _context
                 .RutorItems
-                .Include(el => el.RutorListItem)
-                .Include(el => el.Imgs)
-                .Include(el => el.Spoilers)
                 .OrderByDescending(el => el.Created)
                 .Take(100)
                 .ToListAsync();
