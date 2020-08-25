@@ -4,4 +4,19 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="..\AyanaWebApi\Models\RutorItem.cs" Link="DTO\RutorItem.cs" />
+    <Compile Include="..\AyanaWebApi\Models\RutorItemImg.cs" Link="DTO\RutorItemImg.cs" />
+    <Compile Include="..\AyanaWebApi\Models\RutorItemSpoiler.cs" Link="DTO\RutorItemSpoiler.cs" />
+    <Compile Include="..\AyanaWebApi\Models\RutorListItem.cs" Link="DTO\RutorListItem.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DTO\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
 </Project>

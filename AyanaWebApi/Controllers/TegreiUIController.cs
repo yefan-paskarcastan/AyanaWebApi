@@ -22,6 +22,7 @@ namespace AyanaWebApi.Controllers
             _uiService = tegreiUIService;
         }
 
+        [AllowAnonymous]
         [HttpPost("rutorList")]
         public async Task<ActionResult<IList<RutorItem>>> RutorList()
         {

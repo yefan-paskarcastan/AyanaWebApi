@@ -1,7 +1,52 @@
 ﻿@page "/programs"
+@using System.Text;
+@using Newtonsoft.Json;
+@using AyanaWebApi.Models;
+@inject HttpClient _http;
 
 <h1>ProgramsList</h1>
+@if (_programsList == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Date created</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _programsList)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Created</td>
+                    <td>@item.Name</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code
+{
+    private IList<RutorItem> _programsList;
 
-@code {
-
+    protected override async Task OnInitializedAsync()
+    {
+        var stringContent = new StringContent("", Encoding.UTF8, "application/json");
+        var result = await _http.PostAsync("https://localhost:44334/TegreiUI/rutorList", stringContent);
+        if(result.IsSuccessStatusCode)
+        {
+            var contents = await result.Content.ReadAsStringAsync();
+            _programsList = JsonConvert.DeserializeObject<IList<RutorItem>>(contents);
+        }
+        else
+        {
+            _programsList = new List<RutorItem>();
+        }
+    }
 }
