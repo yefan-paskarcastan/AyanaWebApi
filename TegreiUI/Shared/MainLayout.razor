@@ -1,21 +1,23 @@
 ﻿@inherits LayoutComponentBase
-
 @*<div class="sidebar">
-    <NavMenu />
-</div>*@
+        <NavMenu />
+    </div>*@
 
 <Header />
 
 @*<div class="main">
-    <div class="top-row px-4">
-    </div>
+        <div class="top-row px-4">
+        </div>
 
-    <div class="content px-4">
-        @Body
-    </div>
-</div>*@
-<div class="container">
-    @Body
+        <div class="content px-4">
+            @Body
+        </div>
+    </div>*@
+<div class="container-fluid d-flex flex-column" style="padding-right: 0px;padding-left: 0px;">
+    <main style="margin: 20px;margin-right: 20px;margin-bottom: 10px;margin-top: 0px;">
+        <div>
+            @Body
+        </div>
+    </main>
 </div>
-
 <Footer />
