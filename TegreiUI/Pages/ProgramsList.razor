@@ -37,12 +37,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        GetList();
+    }
+
+    async void GetList()
+    {
         var stringContent = new StringContent("", Encoding.UTF8, "application/json");
         var result = await _http.PostAsync("https://localhost:44334/TegreiUI/rutorList", stringContent);
-        if(result.IsSuccessStatusCode)
+        if (result.IsSuccessStatusCode)
         {
             var contents = await result.Content.ReadAsStringAsync();
             _programsList = JsonConvert.DeserializeObject<IList<RutorItem>>(contents);
+            this.StateHasChanged();
         }
         else
         {
