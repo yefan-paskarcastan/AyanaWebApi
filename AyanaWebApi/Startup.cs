@@ -70,6 +70,7 @@ namespace AyanaWebApi
             services.AddScoped<ILogService, LogService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRutorService, RutorService>();
+            services.AddScoped<INnmclubService, NnmclubService>();
             services.AddScoped<ITorrentSoftService, TorrentSoftService>();
             services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<IImghostService, ImghostService>();
