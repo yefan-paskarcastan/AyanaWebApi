@@ -24,9 +24,9 @@ namespace AyanaWebApi.Controllers
         }
 
         [HttpPost("CheckList")]
-        public async Task<ActionResult<IList<RutorListItem>>> CheckList([FromBody]NnmclubCheckListInput input)
+        public async Task<ActionResult<IList<NnmclubListItem>>> CheckList([FromBody]NnmclubCheckListInput input)
         {
-            ServiceResult<IList<RutorListItem>> result = await _nnmclubService.CheckList(input);
+            ServiceResult<IList<NnmclubListItem>> result = await _nnmclubService.CheckList(input);
 
             if (result.ResultObj != null)
             {

@@ -25,9 +25,29 @@ namespace AyanaWebApi.Models
         public string UriList { get; set; }
 
         /// <summary>
+        /// Прирост количества призентаций на странице
+        /// </summary>
+        public int UriListIncrement { get; set; }
+
+        /// <summary>
+        /// Количество выполняемых приростов
+        /// </summary>
+        public int UriListCount { get; set; }
+
+        /// <summary>
         /// Выражение XPath для парсинга даты добавления презентации
         /// </summary>
         public string XPathDate { get; set; }
+
+        /// <summary>
+        /// Формат даты для парсинга
+        /// </summary>
+        public string DateTimeFormat { get; set; }
+
+        /// <summary>
+        /// Выражение XPath для парсинга имени и ссылки на раздачу
+        /// </summary>
+        public string XPathName { get; set; }
 
         /// <summary>
         /// Адрес тор прокси
