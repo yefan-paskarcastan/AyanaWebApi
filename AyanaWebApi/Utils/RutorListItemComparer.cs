@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using AyanaWebApi.Models;
 
 namespace AyanaWebApi.Utils
 {
-    public class RutorListItemComaprer : IEqualityComparer<RutorListItem>
+    public class RutorListItemComparer : IEqualityComparer<RutorListItem>
     {
         public bool Equals(RutorListItem x, RutorListItem y)
         {

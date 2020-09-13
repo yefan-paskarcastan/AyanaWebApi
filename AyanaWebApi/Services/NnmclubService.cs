@@ -41,9 +41,29 @@ namespace AyanaWebApi.Services
 
             if (items.ResultObj != null)
             {
+                if (_context.NnmclubListItems.Count() == 0)
+                {
+                    _context.NnmclubListItems.AddRange(items.ResultObj);
+                    _context.SaveChanges();
+                    return items;
+                }
+                IList<NnmclubListItem> oldItems =
+                    _context
+                    .NnmclubListItems
+                    .OrderByDescending(d => d.Added)
+                    .Take(200)
+                    .ToList();
+                IList<NnmclubListItem> onlyNew =
+                    items.ResultObj
+                    .Except(oldItems, new NnmclubListItemComparer())
+                    .ToList();
 
+                _context.NnmclubListItems.AddRange(onlyNew);
+                _context.SaveChanges();
+                items.ResultObj = onlyNew;
+                return items;
             }
-            items.Comment = "При получении полного списка презентаций клуба вернулось null";
+            items.Comment = "При получении полного списка презентаций вернулось null";
             _logs.Write(items);
             return items;
         }

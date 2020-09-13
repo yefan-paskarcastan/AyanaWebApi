@@ -77,7 +77,7 @@ namespace AyanaWebApi.Services
                     .ToList();
                 IList<RutorListItem> onlyNew = 
                     items.ResultObj
-                    .Except(oldItems, new RutorListItemComaprer())
+                    .Except(oldItems, new RutorListItemComparer())
                     .ToList();
 
                 await _context.RutorListItems.AddRangeAsync(onlyNew);
