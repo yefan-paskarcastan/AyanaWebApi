@@ -23,6 +23,27 @@ namespace AyanaWebApi.Controllers
             _nnmclubService = nnmclubService;
         }
 
+        [HttpPost("ParseItem")]
+        public async Task<ActionResult<NnmclubItem>> ParseItem([FromBody] NnmclubParseItemInput param)
+        {
+            ServiceResult<NnmclubItem> item = await _nnmclubService.ParseItem(param);
+            if (item.ResultObj != null)
+            {
+
+                foreach (var img in item.ResultObj.Imgs)
+                {
+                    img.RutorItem = null;
+                }
+                foreach (var spl in item.ResultObj.Spoilers)
+                {
+                    spl.RutorItem = null;
+                }
+                item.ResultObj.NnmclubListItem = null;
+                return Ok(item);
+            }
+            return BadRequest("Не удалось распарсить");
+        }
+
         [HttpPost("CheckList")]
         public async Task<ActionResult<IList<NnmclubListItem>>> CheckList([FromBody]NnmclubCheckListInput input)
         {

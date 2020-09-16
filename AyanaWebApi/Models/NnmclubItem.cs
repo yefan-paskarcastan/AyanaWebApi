@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace AyanaWebApi.Models
 {
-    public class RutorItem
+    public class NnmclubItem
     {
         public int Id { get; set; }
 
@@ -13,12 +13,12 @@ namespace AyanaWebApi.Models
 
         public string Description { get; set; }
 
-        public List<RutorItemSpoiler> Spoilers { get; set; }
+        public List<NnmclubItemSpoiler> Spoilers { get; set; }
 
         public List<RutorItemImg> Imgs { get; set; }
 
-        public int RutorListItemId { get; set; }
+        public int NnmclubListItemId { get; set; }
 
-        public RutorListItem RutorListItem { get;set; }
+        public NnmclubListItem NnmclubListItem { get; set; }
     }
 }

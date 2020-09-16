@@ -29,6 +29,29 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
+        /// Парсит указанную раздачу и записывает ее в базу
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public async Task<ServiceResult<NnmclubItem>> ParseItem(NnmclubParseItemInput param)
+        {
+            ServiceResult<NnmclubItem> item = await GetItem(param);
+            item.ServiceName = nameof(NnmclubService);
+            item.Location = "Парсинг презентации";
+
+            /*if (item.ResultObj != null)
+            {
+                _context.RutorItems.Add(item.ResultObj);
+                _context.SaveChanges();
+                return item;
+            }*/
+
+            item.Comment = "Не удалось распрарсить презентацию";
+            _logs.Write(item);
+            return item;
+        }
+
+        /// <summary>
         /// Проверить список презентаций клуба
         /// </summary>
         /// <param name="param"></param>
@@ -132,6 +155,108 @@ namespace AyanaWebApi.Services
             }
             result.ResultObj = tmpList;
             return result;
+        }
+
+        /// <summary>
+        /// Парсит указанную презентацию
+        /// </summary>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        async Task<ServiceResult<NnmclubItem>> GetItem(NnmclubParseItemInput param)
+        {
+            var result = new ServiceResult<NnmclubItem>();
+            result.ServiceName = nameof(NnmclubService);
+            result.Location = "Парсинг презентации";
+
+            NnmclubListItem listItem =
+                _context
+                .NnmclubListItems
+                .SingleOrDefault(el => el.Id == param.ListItemId);
+
+            if (listItem != null)
+            {
+                ServiceResult<string> page = await GetPage(param.UriItem + listItem.Href,
+                    param.ProxySocks5Addr,
+                    param.ProxySocks5Port,
+                    param.ProxyActive);
+                if (page.ResultObj != null)
+                {
+                    var htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(page.ResultObj);
+
+                    List<NnmclubItemSpoiler> listSpoiler = GetSpoilers(htmlDocument,
+                                                                     param.XPathSpoiler);
+                    List<RutorItemImg> listImgs = GetImgs(htmlDocument,
+                                                          param.XPathImgs,
+                                                          listSpoiler);
+                    /*string description = GetDescription(htmlDocument,
+                                                        param.XPathExprDescription,
+                                                        param.XPathExprSpoiler);
+
+                    if (description == null || listImgs == null)
+                    {
+                        result.Comment = "Не удалось получить описани раздачи или ее изображения";
+                        result.ErrorContent = $"RutorListItemId - {listItem.Id} / Href - {listItem.HrefNumber}";
+                        _logs.Write(result);
+                        return result;
+                    }
+
+                    result.ResultObj = new RutorItem
+                    {
+                        Created = DateTime.Now,
+                        Name = listItem.Name,
+                        Description = description,
+                        Spoilers = listSpoiler,
+                        Imgs = listImgs,
+                        RutorListItemId = param.ListItemId,
+                    };
+                    return result;*/
+                }
+                result.Comment = "Не удалось получить веб страницу с презентацией";
+                result.ErrorContent = result.ErrorContent = $"NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}";
+                _logs.Write(result);
+                return result;
+            }
+            result.Comment = "Не удалось найти в базе презентацию из списка с указнным Id";
+            _logs.Write(result);
+            return result;
+        }
+
+        /// <summary>
+        /// Возвращает список спойлеров презентации
+        /// </summary>
+        /// <param name="doc">Html документ с раздачей</param>
+        /// <param name="xPathSpoilers">XPath выражение для поиска споейлеров</param>
+        /// <returns>Список спойлеров</returns>
+        List<NnmclubItemSpoiler> GetSpoilers(HtmlDocument doc, string xPathSpoilers)
+        {
+            HtmlNodeCollection nodeSpoilers =
+                doc.DocumentNode.SelectNodes(xPathSpoilers);
+
+            if (nodeSpoilers == null)
+            {
+                var srResult = new ServiceResult<string>
+                {
+                    ServiceName = nameof(NnmclubService),
+                    Location = "Парсинг презентации / Парсинг спойлеров",
+                    Comment = "Не удалось найти спойлеры на странице с презентацией"
+                };
+                _logs.Write(srResult);
+                return null;
+            }
+
+            var spoilers = new List<NnmclubItemSpoiler>();
+            foreach (var spoiler in nodeSpoilers)
+            {
+                var itemCollect = new NnmclubItemSpoiler()
+                {
+                    Header = HttpUtility.HtmlDecode(spoiler.GetAttributeValue("title", null)),
+                    Body = spoiler.InnerHtml,
+                    Created = DateTime.Now
+                };
+                spoilers.Add(itemCollect);
+            }
+            return spoilers;
         }
 
         /// <summary>

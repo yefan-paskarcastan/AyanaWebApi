@@ -2,7 +2,7 @@
 
 namespace AyanaWebApi.Models
 {
-    public class RutorItemSpoiler
+    public class NnmclubItemSpoiler
     {
         public int Id { get; set; }
 
@@ -12,8 +12,8 @@ namespace AyanaWebApi.Models
 
         public string Body { get; set; }
 
-        public int RutorItemId { get; set; }
+        public int NnmclubItemId { get; set; }
 
-        public RutorItem RutorItem { get; set; }
+        public NnmclubItem NnmclubItem { get; set; }
     }
 }
