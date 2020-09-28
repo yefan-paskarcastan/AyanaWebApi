@@ -29,10 +29,9 @@ namespace AyanaWebApi.Controllers
             ServiceResult<NnmclubItem> item = await _nnmclubService.ParseItem(param);
             if (item.ResultObj != null)
             {
-
                 foreach (var img in item.ResultObj.Imgs)
                 {
-                    img.RutorItem = null;
+                    img.NnmclubItem = null;
                 }
                 foreach (var spl in item.ResultObj.Spoilers)
                 {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AyanaWebApi.Models
@@ -56,6 +57,11 @@ namespace AyanaWebApi.Models
         /// XPath выражения для парсинга картинок
         /// </summary>
         public string XPathImgs { get; set; }
+
+        /// <summary>
+        /// XPath выражения для удаления мусора из презентации
+        /// </summary>
+        public List<string> XPathTrash { get; set; }
 
         /// <summary>
         /// Id объекта листа, по которму будет строится адрес страницы

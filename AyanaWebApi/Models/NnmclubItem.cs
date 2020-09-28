@@ -9,13 +9,30 @@ namespace AyanaWebApi.Models
 
         public DateTime Created { get; set; }
 
+        /// <summary>
+        /// Заголовок презентации
+        /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// Описание презентации
+        /// </summary>
         public string Description { get; set; }
 
+        /// <summary>
+        /// Спойлеры презентации
+        /// </summary>
         public List<NnmclubItemSpoiler> Spoilers { get; set; }
 
-        public List<RutorItemImg> Imgs { get; set; }
+        /// <summary>
+        /// Скриншоты презентации
+        /// </summary>
+        public List<NnmclubItemImg> Imgs { get; set; }
+
+        /// <summary>
+        /// Постер презентации
+        /// </summary>
+        public string Poster { get; set; }
 
         public int NnmclubListItemId { get; set; }
 

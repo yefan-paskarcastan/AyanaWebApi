@@ -27,6 +27,9 @@ namespace AyanaWebApi.Models
         public DbSet<RutorItemSpoiler> RutorItemSpoilers { get; set; }
         public DbSet<RutorItemImg> RutorItemImgs { get; set; }
         public DbSet<NnmclubListItem> NnmclubListItems { get; set; }
+        public DbSet<NnmclubItem> NnmclubItems { get; set; }
+        public DbSet<NnmclubItemSpoiler> NnmclubItemSpoilers { get; set; }
+        public DbSet<NnmclubItemImg> NnmclubItemImgs { get; set; }
         public DbSet<TorrentSoftPost> TorrentSoftPosts { get; set; }
         public DbSet<TorrentSoftResult> TorrentSoftResults { get; set; }
         public DbSet<DictionaryValue> DictionaryValues { get; set; }

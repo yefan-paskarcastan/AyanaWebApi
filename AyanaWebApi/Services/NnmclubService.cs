@@ -39,12 +39,12 @@ namespace AyanaWebApi.Services
             item.ServiceName = nameof(NnmclubService);
             item.Location = "Парсинг презентации";
 
-            /*if (item.ResultObj != null)
+            if (item.ResultObj != null)
             {
-                _context.RutorItems.Add(item.ResultObj);
+                _context.NnmclubItems.Add(item.ResultObj);
                 _context.SaveChanges();
                 return item;
-            }*/
+            }
 
             item.Comment = "Не удалось распрарсить презентацию";
             _logs.Write(item);
@@ -187,31 +187,34 @@ namespace AyanaWebApi.Services
                     List<NnmclubItemSpoiler> listSpoiler = GetSpoilers(htmlDocument,
                                                                        param.XPathSpoiler);
                     string poster = GetPoster(htmlDocument, param.XPathPoster);
-                    /*List<RutorItemImg> listImgs = GetImgs(htmlDocument,
-                                                          param.XPathImgs,
-                                                          listSpoiler);
-                    /*string description = GetDescription(htmlDocument,
-                                                        param.XPathExprDescription,
-                                                        param.XPathExprSpoiler);
+                    List<NnmclubItemImg> listImgs = GetImgs(htmlDocument,
+                                                    param.XPathImgs);
+                    string description = GetDescription(htmlDocument,
+                                                        param.XPathDescription,
+                                                        param.XPathSpoiler,
+                                                        param.XPathPoster,
+                                                        param.XPathImgs,
+                                                        param.XPathTrash);
 
-                    if (description == null || listImgs == null)
+                    if (description == null || listImgs == null || poster == null)
                     {
-                        result.Comment = "Не удалось получить описани раздачи или ее изображения";
-                        result.ErrorContent = $"RutorListItemId - {listItem.Id} / Href - {listItem.HrefNumber}";
+                        result.Comment = "Не удалось получить описание презентации или ее изображений";
+                        result.ErrorContent = $"NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}";
                         _logs.Write(result);
                         return result;
                     }
 
-                    result.ResultObj = new RutorItem
+                    result.ResultObj = new NnmclubItem
                     {
                         Created = DateTime.Now,
                         Name = listItem.Name,
                         Description = description,
                         Spoilers = listSpoiler,
+                        Poster = poster,
                         Imgs = listImgs,
-                        RutorListItemId = param.ListItemId,
+                        NnmclubListItemId = param.ListItemId,
                     };
-                    return result;*/
+                    return result;
                 }
                 result.Comment = "Не удалось получить веб страницу с презентацией";
                 result.ErrorContent = result.ErrorContent = $"NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}";
@@ -277,64 +280,96 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Возвращает список найденных изображений, относящиеся к презентации
+        /// Возвращает список прямых ссылок на скриншоты презентации
         /// </summary>
         /// <param name="doc">Html докумет с презентацией</param>
         /// <param name="xPathImgs">XPath выражение для поиска изображений</param>
-        /// <param name="listSpoiler">Список спойлеров, в которых возможно есть изорбражения</param>
         /// <returns></returns>
-        List<RutorItemImg> GetImgs(HtmlDocument doc,
-                                   string xPathImgs,
-                                   List<NnmclubItemSpoiler> listSpoiler)
+        List<NnmclubItemImg> GetImgs(HtmlDocument doc,
+                             string xPathImgs)
         {
-            var imgsSpoilers = new List<RutorItemImg>();
-            if (listSpoiler != null)
-                foreach (var item in listSpoiler)
-                {
-                    HtmlDocument document = new HtmlDocument();
-                    document.LoadHtml(item.Body);
-                    HtmlNodeCollection nodes = document.DocumentNode.SelectNodes(@"//img");
-                    if (nodes != null)
-                    {
-                        foreach (var img in nodes)
-                        {
-                            imgsSpoilers.Add(
-                                new RutorItemImg
-                                {
-                                    ParentUrl = img.ParentNode.GetAttributeValue("href", null),
-                                    ChildUrl = img.GetAttributeValue("src", null),
-                                    Created = DateTime.Now,
-                                });
-                        }
-                    }
-                }
-
             HtmlNodeCollection nodeImgs =
                 doc.DocumentNode.SelectNodes(xPathImgs);
 
-            if (nodeImgs == null)
+            if (nodeImgs != null)
+            {
+                List<NnmclubItemImg> imgsList =
+                    (from img in nodeImgs
+                     select new NnmclubItemImg
+                     {
+                         Created = DateTime.Now,
+                         ImgUri = img.GetAttributeValue("href", null)
+                     }).ToList();
+                return imgsList;
+            }
+
+            var srResult = new ServiceResult<string>
+            {
+                ServiceName = nameof(NnmclubService),
+                Location = "Парсинг презентации / Получение списка скриншотов",
+                Comment = "Не удалось найти ни одного скриншота на странице презентации"
+            };
+            _logs.Write(srResult);
+            return null;
+        }
+
+        /// <summary>
+        /// Возвращает описание презентации
+        /// </summary>
+        /// <param name="doc">Html документ с презентацией</param>
+        /// <returns>Строка с описанием</returns>
+        string GetDescription(HtmlDocument doc, 
+                              string xPathDesc, 
+                              string xPathSpoilers, 
+                              string xPathPoster, 
+                              string xPathImgs, 
+                              List<string> xPathTrash)
+        {
+            HtmlNode nodeDescription =
+                doc.DocumentNode.SelectSingleNode(xPathDesc);
+            HtmlNodeCollection nodeSpoilersRemove =
+                nodeDescription.SelectNodes(xPathSpoilers);
+            HtmlNode nodePosterRemove =
+                nodeDescription.SelectSingleNode(xPathPoster);
+            HtmlNodeCollection nodeImgsRemove =
+                nodeDescription.SelectNodes(xPathImgs);
+
+            if (nodeDescription == null)
             {
                 var srResult = new ServiceResult<string>
                 {
-                    ServiceName = nameof(RutorService),
-                    Location = "Парсинг раздачи / Получение изображений из описания",
-                    Comment = "Не удалось найти ни одного изображения в описании раздачи"
+                    ServiceName = nameof(NnmclubService),
+                    Location = "Парсинг описания презентации",
+                    Comment = "Не удалось найти описание презентации по указанному XPath выражению"
                 };
                 _logs.Write(srResult);
                 return null;
             }
 
-            List<RutorItemImg> list =
-                (from img in nodeImgs
-                 select new RutorItemImg
-                 {
-                     ParentUrl = img.ParentNode.GetAttributeValue("href", null),
-                     ChildUrl = img.GetAttributeValue("src", null),
-                     Created = DateTime.Now,
-                 }).ToList();
+            if (nodeSpoilersRemove != null)
+                foreach (var item in nodeSpoilersRemove)
+                {
+                    item.Remove();
+                }
+            if (nodeImgsRemove != null)
+                foreach (var item in nodeImgsRemove)
+                {
+                    item.Remove();
+                }
+            if (nodePosterRemove != null)
+                nodePosterRemove.Remove();
 
-            list.AddRange(imgsSpoilers);
-            return list;
+            foreach (string item in xPathTrash)
+            {
+                HtmlNodeCollection htmlNodes = nodeDescription.SelectNodes(item);
+                if (htmlNodes != null)
+                    foreach (HtmlNode node in htmlNodes)
+                    {
+                        node.Remove();
+                    }
+            }
+
+            return nodeDescription.InnerHtml;
         }
 
         /// <summary>
