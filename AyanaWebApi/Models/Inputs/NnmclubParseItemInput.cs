@@ -48,6 +48,11 @@ namespace AyanaWebApi.Models
         public string XPathSpoiler { get; set; }
 
         /// <summary>
+        /// XPath выражение для парсинга постера
+        /// </summary>
+        public string XPathPoster { get; set; }
+
+        /// <summary>
         /// XPath выражения для парсинга картинок
         /// </summary>
         public string XPathImgs { get; set; }

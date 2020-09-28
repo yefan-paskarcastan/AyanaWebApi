@@ -36,7 +36,7 @@ namespace AyanaWebApi.Controllers
                 }
                 foreach (var spl in item.ResultObj.Spoilers)
                 {
-                    spl.RutorItem = null;
+                    spl.NnmclubItem = null;
                 }
                 item.ResultObj.NnmclubListItem = null;
                 return Ok(item);

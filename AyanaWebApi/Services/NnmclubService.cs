@@ -185,8 +185,9 @@ namespace AyanaWebApi.Services
                     htmlDocument.LoadHtml(page.ResultObj);
 
                     List<NnmclubItemSpoiler> listSpoiler = GetSpoilers(htmlDocument,
-                                                                     param.XPathSpoiler);
-                    List<RutorItemImg> listImgs = GetImgs(htmlDocument,
+                                                                       param.XPathSpoiler);
+                    string poster = GetPoster(htmlDocument, param.XPathPoster);
+                    /*List<RutorItemImg> listImgs = GetImgs(htmlDocument,
                                                           param.XPathImgs,
                                                           listSpoiler);
                     /*string description = GetDescription(htmlDocument,
@@ -257,6 +258,83 @@ namespace AyanaWebApi.Services
                 spoilers.Add(itemCollect);
             }
             return spoilers;
+        }
+
+        /// <summary>
+        /// Возвращает ссылку на постер презентации
+        /// </summary>
+        /// <param name="doc">html документ с возможным постером</param>
+        /// <param name="xPathPoster">xpath для постера</param>
+        /// <returns></returns>
+        string GetPoster(HtmlDocument doc, string xPathPoster)
+        {
+            HtmlNode posterNode = doc.DocumentNode.SelectSingleNode(xPathPoster);
+            if (posterNode != null)
+            {
+                return posterNode.GetAttributeValue("title", null);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Возвращает список найденных изображений, относящиеся к презентации
+        /// </summary>
+        /// <param name="doc">Html докумет с презентацией</param>
+        /// <param name="xPathImgs">XPath выражение для поиска изображений</param>
+        /// <param name="listSpoiler">Список спойлеров, в которых возможно есть изорбражения</param>
+        /// <returns></returns>
+        List<RutorItemImg> GetImgs(HtmlDocument doc,
+                                   string xPathImgs,
+                                   List<NnmclubItemSpoiler> listSpoiler)
+        {
+            var imgsSpoilers = new List<RutorItemImg>();
+            if (listSpoiler != null)
+                foreach (var item in listSpoiler)
+                {
+                    HtmlDocument document = new HtmlDocument();
+                    document.LoadHtml(item.Body);
+                    HtmlNodeCollection nodes = document.DocumentNode.SelectNodes(@"//img");
+                    if (nodes != null)
+                    {
+                        foreach (var img in nodes)
+                        {
+                            imgsSpoilers.Add(
+                                new RutorItemImg
+                                {
+                                    ParentUrl = img.ParentNode.GetAttributeValue("href", null),
+                                    ChildUrl = img.GetAttributeValue("src", null),
+                                    Created = DateTime.Now,
+                                });
+                        }
+                    }
+                }
+
+            HtmlNodeCollection nodeImgs =
+                doc.DocumentNode.SelectNodes(xPathImgs);
+
+            if (nodeImgs == null)
+            {
+                var srResult = new ServiceResult<string>
+                {
+                    ServiceName = nameof(RutorService),
+                    Location = "Парсинг раздачи / Получение изображений из описания",
+                    Comment = "Не удалось найти ни одного изображения в описании раздачи"
+                };
+                _logs.Write(srResult);
+                return null;
+            }
+
+            List<RutorItemImg> list =
+                (from img in nodeImgs
+                 select new RutorItemImg
+                 {
+                     ParentUrl = img.ParentNode.GetAttributeValue("href", null),
+                     ChildUrl = img.GetAttributeValue("src", null),
+                     Created = DateTime.Now,
+                 }).ToList();
+
+            list.AddRange(imgsSpoilers);
+            return list;
         }
 
         /// <summary>
