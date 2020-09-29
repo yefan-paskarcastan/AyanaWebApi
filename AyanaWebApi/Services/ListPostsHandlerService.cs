@@ -94,7 +94,7 @@ namespace AyanaWebApi.Services
                     _context.DriverRutorTorrentInputs
                     .Single(el => el.Active);
                 driverTorrentInput.ParseItemId = rutorItem.ResultObj.Id;
-                TorrentSoftPost post = await _driverService.RutorTorrent(driverTorrentInput);
+                TorrentSoftPost post = await _driverService.Convert(driverTorrentInput);
                 if (post == null)
                 {
                     serviceResult.Comment = "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;

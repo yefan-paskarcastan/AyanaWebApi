@@ -25,7 +25,7 @@ namespace AyanaWebApi.Controllers
         [HttpPost("RutorTorrent")]
         public async Task<ActionResult<TorrentSoftPost>> RutorTorrent(DriverRutorTorrentInput param)
         {
-            TorrentSoftPost result = await _driverService.RutorTorrent(param);
+            TorrentSoftPost result = await _driverService.Convert(param);
             if (result != null)
             {
                 foreach (var item in result.Screenshots)

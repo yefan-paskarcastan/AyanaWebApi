@@ -11,6 +11,6 @@ namespace AyanaWebApi.Services.Interfaces
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        Task<TorrentSoftPost> RutorTorrent(DriverRutorTorrentInput param);
+        Task<TorrentSoftPost> Convert(DriverRutorTorrentInput param);
     }
 }

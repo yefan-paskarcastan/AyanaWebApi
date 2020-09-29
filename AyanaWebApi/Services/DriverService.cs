@@ -35,9 +35,9 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<TorrentSoftPost> RutorTorrent(DriverRutorTorrentInput param)
+        public async Task<TorrentSoftPost> Convert(DriverRutorTorrentInput param)
         {
-            TorrentSoftPost post = await RutorTorrentGet(param);
+            TorrentSoftPost post = await RutorToSoft(param);
             if (post != null)
             {
                 _context.TorrentSoftPosts.Add(post);
@@ -58,7 +58,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        async Task<TorrentSoftPost> RutorTorrentGet(DriverRutorTorrentInput param)
+        async Task<TorrentSoftPost> RutorToSoft(DriverRutorTorrentInput param)
         {
             var serviceResult = new ServiceResult<string>
             {
@@ -93,7 +93,7 @@ namespace AyanaWebApi.Services
                 }
                 post.TorrentFile = torrentFile;
 
-                string posterFile = await GetPosterImg(rutorItem.Imgs, param);
+                string posterFile = await GetPosterImgRutor(rutorItem.Imgs, param);
                 if (posterFile == null)
                 {
                     serviceResult.Comment = "Не удалось загрузить постер";
@@ -131,8 +131,8 @@ namespace AyanaWebApi.Services
                      }).ToList();
                 post.Screenshots = queryScr;
 
-                post.Description = FormatDescription(rutorItem.Description, post.PosterImg);
-                post.Spoilers = FormatSpoilers(rutorItem.Spoilers);
+                post.Description = FormatDescriptionRutor(rutorItem.Description, post.PosterImg);
+                post.Spoilers = FormatSpoilersRutor(rutorItem.Spoilers);
 
                 return post;
             }
@@ -205,8 +205,8 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="listImg"></param>
         /// <returns>Полное имя файла</returns>
-        async Task<string> GetPosterImg(List<RutorItemImg> listImg, 
-                                        DriverRutorTorrentInput param)
+        async Task<string> GetPosterImgRutor(List<RutorItemImg> listImg, 
+                                             DriverRutorTorrentInput param)
         {
             var serviceResult = new ServiceResult<string>
             {
@@ -289,7 +289,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="post"></param>
         /// <returns></returns>
-        string FormatDescription(string desc, string poster)
+        string FormatDescriptionRutor(string desc, string poster)
         {
             HtmlDocument htmlDocument = new HtmlDocument();
             htmlDocument.LoadHtml(desc);
@@ -338,7 +338,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="lst"></param>
         /// <returns></returns>
-        string FormatSpoilers(List<RutorItemSpoiler> lst)
+        string FormatSpoilersRutor(List<RutorItemSpoiler> lst)
         {
             string spoilersResult = Environment.NewLine + Environment.NewLine;
 
