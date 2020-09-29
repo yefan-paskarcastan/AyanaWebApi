@@ -59,6 +59,11 @@ namespace AyanaWebApi.Models
         public string XPathImgs { get; set; }
 
         /// <summary>
+        /// XPath выражения для парсинга торрент файла
+        /// </summary>
+        public string XPathTorrent { get; set; }
+
+        /// <summary>
         /// XPath выражения для удаления мусора из презентации
         /// </summary>
         public List<string> XPathTrash { get; set; }

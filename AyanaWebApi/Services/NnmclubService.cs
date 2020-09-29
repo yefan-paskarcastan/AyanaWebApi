@@ -187,6 +187,7 @@ namespace AyanaWebApi.Services
                     List<NnmclubItemSpoiler> listSpoiler = GetSpoilers(htmlDocument,
                                                                        param.XPathSpoiler);
                     string poster = GetPoster(htmlDocument, param.XPathPoster);
+                    string torrent = GetTorrent(htmlDocument, param.XPathTorrent);
                     List<NnmclubItemImg> listImgs = GetImgs(htmlDocument,
                                                     param.XPathImgs);
                     string description = GetDescription(htmlDocument,
@@ -212,6 +213,7 @@ namespace AyanaWebApi.Services
                         Spoilers = listSpoiler,
                         Poster = poster,
                         Imgs = listImgs,
+                        Torrent = torrent,
                         NnmclubListItemId = param.ListItemId,
                     };
                     return result;
@@ -275,6 +277,22 @@ namespace AyanaWebApi.Services
             if (posterNode != null)
             {
                 return posterNode.GetAttributeValue("title", null);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Получить ссылку на торрент файл
+        /// </summary>
+        /// <param name="doc">Html страница с презентацией</param>
+        /// <param name="xPathTorrent">XPath выражение для парсинга торрент файла</param>
+        /// <returns>Ссылка на файл</returns>
+        string GetTorrent(HtmlDocument doc, string xPathTorrent)
+        {
+            HtmlNode posterNode = doc.DocumentNode.SelectSingleNode(xPathTorrent);
+            if (posterNode != null)
+            {
+                return posterNode.GetAttributeValue("href", null);
             }
             return null;
         }

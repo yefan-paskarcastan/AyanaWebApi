@@ -34,6 +34,11 @@ namespace AyanaWebApi.Models
         /// </summary>
         public string Poster { get; set; }
 
+        /// <summary>
+        /// Ссылка на торрент файл
+        /// </summary>
+        public string Torrent { get; set; }
+
         public int NnmclubListItemId { get; set; }
 
         public NnmclubListItem NnmclubListItem { get; set; }

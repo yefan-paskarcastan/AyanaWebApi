@@ -150,7 +150,7 @@ namespace AyanaWebApi.Services
         /// <param name="proxyAddress">Адрес тор прокси</param>
         /// <param name="proxyPort">Порт тор проски</param>
         /// <param name="proxyUsing">Использовать или нет тор прокси</param>
-        /// <returns></returns>
+        /// <returns>Полное имя сохранненого файла</returns>
         async Task<string> DownloadFile(string uri, 
                                         string fileName, 
                                         string proxyAddress, 
