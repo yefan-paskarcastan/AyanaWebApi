@@ -5,15 +5,15 @@ namespace AyanaWebApi.Models
     /// <summary>
     /// Резултат добавления поста на сайт
     /// </summary>
-    public class TorrentSoftResult
+    public class SoftResult
     {
         public int Id { get; set; }
 
         public DateTime Created { get; set; }
 
-        public int TorrentSoftPostId { get; set; }
+        public int SoftPostId { get; set; }
 
-        public TorrentSoftPost TorrentSoftPost { get; set; }
+        public SoftPost SoftPost { get; set; }
 
         /// <summary>
         /// Пост добавлен

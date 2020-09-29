@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace AyanaWebApi.Models
 {
-    public class TorrentSoftPost
+    public class SoftPost
     {
         public int Id { get; set; }
 
@@ -13,7 +13,7 @@ namespace AyanaWebApi.Models
 
         public string Description { get; set; }
 
-        public List<TorrentSoftPostScreenshot> Screenshots { get; set; }
+        public List<SoftPostImg> Imgs { get; set; }
 
         public string Spoilers { get; set; }
 

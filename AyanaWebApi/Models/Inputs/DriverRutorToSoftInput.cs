@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AyanaWebApi.Models
 {
-    public class DriverRutorTorrentInput
+    public class DriverRutorToSoftInput
     {
         public int Id { get; set; }
 

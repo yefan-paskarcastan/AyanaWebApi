@@ -21,18 +21,18 @@ namespace AyanaWebApi.Controllers
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    public class TorrentSoftController : ControllerBase
+    public class SoftController : ControllerBase
     {
-        public TorrentSoftController(ITorrentSoftService torrentSoftService)
+        public SoftController(ISoftService softService)
         {
-            _torrentSoftService = torrentSoftService;
+            _softService = softService;
         }
 
         [HttpPost("AddPost")]
-        public async Task<ActionResult<string>> AddPost([FromBody]TorrentSoftPostInput inputParam)
+        public async Task<ActionResult<string>> AddPost([FromBody]SoftPostInput inputParam)
         {
-            ServiceResult<TorrentSoftResult> result = await _torrentSoftService.AddPost(inputParam);
-            if (result.ResultObj.TorrentSoftPost != null
+            ServiceResult<SoftResult> result = await _softService.AddPost(inputParam);
+            if (result.ResultObj.SoftPost != null
                 && result.ResultObj.SendPostIsSuccess
                 && result.ResultObj.PosterIsSuccess
                 && result.ResultObj.TorrentFileIsSuccess)
@@ -42,6 +42,6 @@ namespace AyanaWebApi.Controllers
             return BadRequest("Не удалось добавить пост");
         }
 
-        readonly ITorrentSoftService _torrentSoftService;
+        readonly ISoftService _softService;
     }
 }

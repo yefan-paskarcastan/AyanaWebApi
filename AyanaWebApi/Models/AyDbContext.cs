@@ -30,16 +30,16 @@ namespace AyanaWebApi.Models
         public DbSet<NnmclubItem> NnmclubItems { get; set; }
         public DbSet<NnmclubItemSpoiler> NnmclubItemSpoilers { get; set; }
         public DbSet<NnmclubItemImg> NnmclubItemImgs { get; set; }
-        public DbSet<TorrentSoftPost> TorrentSoftPosts { get; set; }
-        public DbSet<TorrentSoftResult> TorrentSoftResults { get; set; }
+        public DbSet<SoftPost> SoftPosts { get; set; }
+        public DbSet<SoftResult> SoftResults { get; set; }
         public DbSet<DictionaryValue> DictionaryValues { get; set; }
 
         #region Tables of setting
         public DbSet<RutorCheckListInput> RutorCheckListInputs { get; set; }
         public DbSet<RutorParseItemInput> RutorParseItemInputs { get; set; }
-        public DbSet<DriverRutorTorrentInput> DriverRutorTorrentInputs { get; set; }
+        public DbSet<DriverRutorToSoftInput> DriverRutorToSoftInputs { get; set; }
         public DbSet<ImghostParsingInput> ImghostParsingInputs { get; set; }
-        public DbSet<TorrentSoftPostInput> TorrentSoftPostInputs { get; set; }
+        public DbSet<SoftPostInput> SoftPostInputs { get; set; }
         #endregion
     }
 }

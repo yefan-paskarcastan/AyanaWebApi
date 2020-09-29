@@ -1,6 +1,6 @@
 ﻿namespace AyanaWebApi.Utils
 {
-    public class TorrentSoftFileUploadResult
+    public class SoftFileUploadResult
     {
         public string Link { get; set; }
 

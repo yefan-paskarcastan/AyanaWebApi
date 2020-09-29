@@ -71,7 +71,7 @@ namespace AyanaWebApi
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRutorService, RutorService>();
             services.AddScoped<INnmclubService, NnmclubService>();
-            services.AddScoped<ITorrentSoftService, TorrentSoftService>();
+            services.AddScoped<ISoftService, SoftService>();
             services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<IImghostService, ImghostService>();
             services.AddScoped<IImgsConverterService, ImgsConverterService>();

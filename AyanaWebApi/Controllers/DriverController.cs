@@ -22,15 +22,15 @@ namespace AyanaWebApi.Controllers
             _driverService = driverService;
         }
 
-        [HttpPost("RutorTorrent")]
-        public async Task<ActionResult<TorrentSoftPost>> RutorTorrent(DriverRutorTorrentInput param)
+        [HttpPost("RutorToSoft")]
+        public async Task<ActionResult<SoftPost>> RutorToSoft(DriverRutorToSoftInput param)
         {
-            TorrentSoftPost result = await _driverService.Convert(param);
+            SoftPost result = await _driverService.Convert(param);
             if (result != null)
             {
-                foreach (var item in result.Screenshots)
+                foreach (var item in result.Imgs)
                 {
-                    item.TorrentSoftPost = null;
+                    item.SoftPost = null;
                 }
                 return Ok(result);
             }

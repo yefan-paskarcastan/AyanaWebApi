@@ -15,9 +15,9 @@ using AyanaWebApi.Services.Interfaces;
 
 namespace AyanaWebApi.Services
 {
-    public class TorrentSoftService : ITorrentSoftService
+    public class SoftService : ISoftService
     {
-        public TorrentSoftService(AyDbContext context,
+        public SoftService(AyDbContext context,
                                   IHttpClientFactory clientFactory,
                                   ILogService logService)
         {
@@ -31,42 +31,42 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<TorrentSoftResult>> AddPost(TorrentSoftPostInput inputParam)
+        public async Task<ServiceResult<SoftResult>> AddPost(SoftPostInput inputParam)
         {
-            var result = new TorrentSoftResult
+            var result = new SoftResult
             {
                 Created = DateTime.Now,
-                TorrentSoftPostId = inputParam.TorrentSoftPostId,
-                TorrentSoftPost = null,
+                SoftPostId = inputParam.SoftPostId,
+                SoftPost = null,
                 PosterIsSuccess = false,
                 TorrentFileIsSuccess = false,
                 SendPostIsSuccess = false
             };
 
-            var serviceResult = new ServiceResult<TorrentSoftResult>();
-            serviceResult.ServiceName = nameof(TorrentSoftService);
+            var serviceResult = new ServiceResult<SoftResult>();
+            serviceResult.ServiceName = nameof(SoftService);
             serviceResult.Location = "Публикация поста";
             serviceResult.ResultObj = result;
 
-            TorrentSoftPost post =
-                _context.TorrentSoftPosts
-                        .Include(el => el.Screenshots)
-                        .SingleOrDefault(el => el.Id == inputParam.TorrentSoftPostId);
+            SoftPost post =
+                _context.SoftPosts
+                        .Include(el => el.Imgs)
+                        .SingleOrDefault(el => el.Id == inputParam.SoftPostId);
             if (post == null)
             {
                 serviceResult.Comment = "Не удалось найти указанный подготовленный пост в базе";
-                serviceResult.ErrorContent = "TorrentSoftPostId = " + inputParam.TorrentSoftPostId;
+                serviceResult.ErrorContent = "TorrentSoftPostId = " + inputParam.SoftPostId;
                 _logService.Write(serviceResult);
                 return serviceResult;
             }
-            result.TorrentSoftPost = post;
+            result.SoftPost = post;
 
             string userHash = await Authorize(inputParam);
-            TorrentSoftFileUploadResult torrentUploadResult = await UploadFile(inputParam,
-                                                                               Path.GetFileName(post.TorrentFile),
-                                                                               post.TorrentFile,
-                                                                               userHash,
-                                                                               inputParam.TorrentUploadQueryString);
+            SoftFileUploadResult torrentUploadResult = await UploadFile(inputParam,
+                                                                        Path.GetFileName(post.TorrentFile),
+                                                                        post.TorrentFile,
+                                                                        userHash,
+                                                                        inputParam.TorrentUploadQueryString);
             if (!torrentUploadResult.Success)
             {
                 serviceResult.Comment = "Не удалось загрузить торрент файл на сайт";
@@ -76,11 +76,11 @@ namespace AyanaWebApi.Services
             }
             result.TorrentFileIsSuccess = true;
 
-            TorrentSoftFileUploadResult imgUploadResult = await UploadFile(inputParam,
-                                                                           Path.GetFileName(post.PosterImg),
-                                                                           post.PosterImg,
-                                                                           userHash,
-                                                                           inputParam.PosterUploadQueryString);
+            SoftFileUploadResult imgUploadResult = await UploadFile(inputParam,
+                                                                    Path.GetFileName(post.PosterImg),
+                                                                    post.PosterImg,
+                                                                    userHash,
+                                                                    inputParam.PosterUploadQueryString);
             if (!imgUploadResult.Success)
             {
                 serviceResult.Comment = "Не удалось загрузить постер на сайт";
@@ -112,7 +112,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="inputParam">Параметры доступа к сайту</param>
         /// <returns>Возвращает хеш пользователя, который нужно добавлять к некоторым запросам. Если авторизвация не успешна - null</returns>
-        async Task<string> Authorize(TorrentSoftPostInput inputParam)
+        async Task<string> Authorize(SoftPostInput inputParam)
         {
             IEnumerable<KeyValuePair<string, string>> formContent = inputParam.AuthData;
             var content = new FormUrlEncodedContent(formContent);
@@ -134,7 +134,7 @@ namespace AyanaWebApi.Services
         /// <param name="httpFormFileName"></param>
         /// <param name="fullPathFileOnServer"></param>
         /// <returns></returns>
-        async Task<TorrentSoftFileUploadResult> UploadFile(TorrentSoftPostInput inputParam,
+        async Task<SoftFileUploadResult> UploadFile(SoftPostInput inputParam,
                                                            string httpFormFileName,
                                                            string fullPathFileOnServer,
                                                            string userHash,
@@ -164,12 +164,12 @@ namespace AyanaWebApi.Services
             var result = await _httpClient.PostAsync(fullAddrUploadFile, form);
 
             var contents = await result.Content.ReadAsStringAsync();
-            TorrentSoftFileUploadResult uploadResult = JsonConvert.DeserializeObject<TorrentSoftFileUploadResult>(contents);
+            SoftFileUploadResult uploadResult = JsonConvert.DeserializeObject<SoftFileUploadResult>(contents);
 
             if (!uploadResult.Success)
             {
                 var serviceResult = new ServiceResult<string>();
-                serviceResult.ServiceName = nameof(TorrentSoftService);
+                serviceResult.ServiceName = nameof(SoftService);
                 serviceResult.Location = "Загрузка файла";
                 serviceResult.Comment = "Не удалось загрузить файл на сайт";
                 serviceResult.ErrorContent = "Имя файла на сервере: " + fullPathFileOnServer;
@@ -185,10 +185,10 @@ namespace AyanaWebApi.Services
         /// <param name="inputParam"></param>
         /// <param name="imgUploadResult"></param>
         /// <returns></returns>
-        async Task<bool> SendPost(TorrentSoftPostInput inputParam,
-                                 TorrentSoftFileUploadResult imgUploadResult,
-                                 string userHash,
-                                 TorrentSoftPost post)
+        async Task<bool> SendPost(SoftPostInput inputParam,
+                                  SoftFileUploadResult imgUploadResult,
+                                  string userHash,
+                                  SoftPost post)
         {
             IEnumerable<KeyValuePair<string, string>> formContent = inputParam.FormData;
             var manualContent = new Dictionary<string, string>
@@ -202,9 +202,9 @@ namespace AyanaWebApi.Services
             string startKey = inputParam.AddPostFormScreenshotTemplateStartHeader;
             string endKey = inputParam.AddPostFormScreenshotTemplateEndHeader;
             for (int i = 1; i < inputParam.AddPostFormMaxCountScreenshots
-                            && i < post.Screenshots.Count; i++)
+                            && i < post.Imgs.Count; i++)
             {
-                manualContent.Add(startKey + i + endKey, post.Screenshots[i - 1].ScreenUri);
+                manualContent.Add(startKey + i + endKey, post.Imgs[i - 1].ImgUri);
             }
             var content = new FormUrlEncodedContent(formContent.Union(manualContent));
 

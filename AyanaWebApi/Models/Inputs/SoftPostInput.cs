@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AyanaWebApi.Models
 {
-    public class TorrentSoftPostInput
+    public class SoftPostInput
     {
         public int Id { get; set; }
 
@@ -95,7 +95,7 @@ namespace AyanaWebApi.Models
         /// Id готового для выкладывания поста
         /// </summary>
         [NotMapped]
-        public int TorrentSoftPostId { get; set; }
+        public int SoftPostId { get; set; }
 
         /// <summary>
         /// Параметры формы для добавления поста

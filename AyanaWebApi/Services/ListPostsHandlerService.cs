@@ -15,7 +15,7 @@ namespace AyanaWebApi.Services
         public ListPostsHandlerService(AyDbContext ayDbContext,
                                        IRutorService rutorService,
                                        IDriverService driverService,
-                                       ITorrentSoftService torrentSoftService,
+                                       ISoftService torrentSoftService,
                                        ILogService logService)
         {
             _context = ayDbContext;
@@ -90,11 +90,11 @@ namespace AyanaWebApi.Services
                     break;
                 }
 
-                DriverRutorTorrentInput driverTorrentInput =
-                    _context.DriverRutorTorrentInputs
+                DriverRutorToSoftInput driverTorrentInput =
+                    _context.DriverRutorToSoftInputs
                     .Single(el => el.Active);
                 driverTorrentInput.ParseItemId = rutorItem.ResultObj.Id;
-                TorrentSoftPost post = await _driverService.Convert(driverTorrentInput);
+                SoftPost post = await _driverService.Convert(driverTorrentInput);
                 if (post == null)
                 {
                     serviceResult.Comment = "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
@@ -102,10 +102,10 @@ namespace AyanaWebApi.Services
                     break;
                 }
 
-                TorrentSoftPostInput torrentSoftPostInput =
-                    _context.TorrentSoftPostInputs
+                SoftPostInput torrentSoftPostInput =
+                    _context.SoftPostInputs
                     .Single(el => el.Active);
-                torrentSoftPostInput.TorrentSoftPostId = post.Id;
+                torrentSoftPostInput.SoftPostId = post.Id;
                 torrentSoftPostInput.PosterUploadQueryString =
                     _context.DictionaryValues
                     .Where(el => el.DictionaryName == torrentSoftPostInput.PosterUploadQueryStringId)
@@ -122,8 +122,8 @@ namespace AyanaWebApi.Services
                     _context.DictionaryValues
                     .Where(el => el.DictionaryName == torrentSoftPostInput.AuthDataId)
                     .ToDictionary(k => k.Key, v => v.Value);
-                ServiceResult<TorrentSoftResult> result = await _torrentSoftService.AddPost(torrentSoftPostInput);
-                if (result.ResultObj.TorrentSoftPost == null
+                ServiceResult<SoftResult> result = await _torrentSoftService.AddPost(torrentSoftPostInput);
+                if (result.ResultObj.SoftPost == null
                     || !result.ResultObj.SendPostIsSuccess
                     || !result.ResultObj.PosterIsSuccess
                     || !result.ResultObj.TorrentFileIsSuccess)
@@ -139,7 +139,7 @@ namespace AyanaWebApi.Services
         AyDbContext _context;
         IRutorService _rutorService;
         IDriverService _driverService;
-        ITorrentSoftService _torrentSoftService;
+        ISoftService _torrentSoftService;
         ILogService _logService;
     }
 }

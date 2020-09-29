@@ -5,13 +5,13 @@ using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services.Interfaces
 {
-    public interface ITorrentSoftService
+    public interface ISoftService
     {
         /// <summary>
         /// Добавляет пост
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns></returns>
-        Task<ServiceResult<TorrentSoftResult>> AddPost(TorrentSoftPostInput inputParam);
+        Task<ServiceResult<SoftResult>> AddPost(SoftPostInput inputParam);
     }
 }
