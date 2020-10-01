@@ -11,6 +11,6 @@ namespace AyanaWebApi.Services.Interfaces
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        Task<SoftPost> Convert(DriverRutorToSoftInput param);
+        Task<SoftPost> Convert(DriverToSoftInput param);
     }
 }

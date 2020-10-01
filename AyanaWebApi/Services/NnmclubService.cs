@@ -186,7 +186,10 @@ namespace AyanaWebApi.Services
 
                     List<NnmclubItemSpoiler> listSpoiler = GetSpoilers(htmlDocument,
                                                                        param.XPathSpoiler);
-                    string poster = GetPoster(htmlDocument, param.XPathPoster);
+                    var poster = new StringBuilder(GetPoster(htmlDocument, param.XPathPoster));
+                    poster.Remove(0, poster
+                          .ToString()
+                          .IndexOf("?link=") + "?link=".Length);
                     string torrent = GetTorrent(htmlDocument, param.XPathTorrent);
                     List<NnmclubItemImg> listImgs = GetImgs(htmlDocument,
                                                     param.XPathImgs);
@@ -211,7 +214,7 @@ namespace AyanaWebApi.Services
                         Name = listItem.Name,
                         Description = description,
                         Spoilers = listSpoiler,
-                        Poster = poster,
+                        Poster = poster.ToString(),
                         Imgs = listImgs,
                         Torrent = torrent,
                         NnmclubListItemId = param.ListItemId,

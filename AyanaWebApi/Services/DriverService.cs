@@ -31,13 +31,24 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Получает пост и сохраняет его в базу
+        /// Преобразует пост в SoftPost
         /// </summary>
         /// <param name="param"></param>
-        /// <returns></returns>
-        public async Task<SoftPost> Convert(DriverRutorToSoftInput param)
+        /// <returns>SoftPost</returns>
+        public async Task<SoftPost> Convert(DriverToSoftInput param)
         {
-            SoftPost post = await RutorToSoft(param);
+            SoftPost post = null;
+            switch (param.Type)
+            {
+                case nameof(RutorItem):
+                    post = await RutorToSoft(param);
+                    break;
+                case nameof(NnmclubItem):
+                    post = await NnmclubToSoft(param);
+                    break;
+                default:
+                    break;
+            }
             if (post != null)
             {
                 _context.SoftPosts.Add(post);
@@ -54,16 +65,16 @@ namespace AyanaWebApi.Services
         readonly ILogService _logService;
 
         /// <summary>
-        /// Подготавливает распрашеный пост к выкладыванию
+        /// Преобразует RutorPost в SoftPost
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        async Task<SoftPost> RutorToSoft(DriverRutorToSoftInput param)
+        async Task<SoftPost> RutorToSoft(DriverToSoftInput param)
         {
             var serviceResult = new ServiceResult<string>
             {
-                ServiceName = "DriverService",
-                Location = "Преобразование раздачи в пост на сайт soft"
+                ServiceName = nameof(DriverService),
+                Location = "Преобразование презентации в пост на сайт soft"
             };
 
             RutorItem rutorItem = _context
@@ -143,6 +154,75 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
+        /// Преобразует NnmclubPost в SoftPost
+        /// </summary>
+        /// <returns></returns>
+        async Task<SoftPost> NnmclubToSoft(DriverToSoftInput param)
+        {
+            var serviceResult = new ServiceResult<string>
+            {
+                ServiceName = nameof(DriverService),
+                Location = "Преобразование презентации в пост на сайт soft"
+            };
+
+            NnmclubItem clubItem = _context
+                                  .NnmclubItems
+                                  .Include(el => el.NnmclubListItem)
+                                  .Include(el => el.Imgs)
+                                  .Include(el => el.Spoilers)
+                                  .SingleOrDefault(el => el.Id == param.ParseItemId);
+            if (clubItem != null)
+            {
+                string posterFullName = await DownloadFile(clubItem.Poster,
+                                                           Path.GetFileName(clubItem.Poster),
+                                                           param.ProxySocks5Addr,
+                                                           param.ProxySocks5Port,
+                                                           param.ProxyActive);
+                if (posterFullName == null)
+                {
+                    serviceResult.Comment = "Не удалось загрузить постер";
+                    serviceResult.ErrorContent = $"NnmclubItemId: {param.ParseItemId}; Href: {clubItem.NnmclubListItem.Href}";
+                    _logService.Write(serviceResult);
+                    return null;
+                }
+
+                string torrentFullName = await DownloadFile(param.TorrentUri + clubItem.Torrent,
+                                                            Path.GetRandomFileName().Replace('.', '_') + ".torrent",
+                                                            param.ProxySocks5Addr,
+                                                            param.ProxySocks5Port,
+                                                            param.ProxyActive);
+                if (torrentFullName == null)
+                {
+                    serviceResult.Comment = "Не удалось загрузить торрент файл";
+                    serviceResult.ErrorContent = $"NnmclubItemId: {param.ParseItemId}; Href: {clubItem.NnmclubListItem.Href}";
+                    _logService.Write(serviceResult);
+                    return null;
+                }
+
+                var post = new SoftPost
+                {
+                    Created = DateTime.Now,
+                    Name = clubItem.Name,
+                    Description = clubItem.Description,
+                    Spoilers = FormatSpoilersNnmclub(clubItem.Spoilers),
+                    PosterImg = posterFullName,
+                    TorrentFile = torrentFullName,
+                    Imgs = (from img in clubItem.Imgs
+                            select new SoftPostImg
+                            {
+                                Created = DateTime.Now,
+                                ImgUri = img.ImgUri
+                            }).ToList(),
+                };
+                return post;
+            }
+            serviceResult.Comment = "В базе не найдена презентация с указанным Id";
+            serviceResult.ErrorContent = $"NnmclubItemId: {param.ParseItemId}";
+            _logService.Write(serviceResult);
+            return null;
+        }
+
+        /// <summary>
         /// Загружает файл в локальную папку
         /// </summary>
         /// <param name="uri">Расположение файла</param>
@@ -159,7 +239,7 @@ namespace AyanaWebApi.Services
         {
             var serviceResult = new ServiceResult<string>
             {
-                ServiceName = "DriverService",
+                ServiceName = nameof(DriverService),
                 Location = "Загрузка файла"
             };
 
@@ -206,11 +286,11 @@ namespace AyanaWebApi.Services
         /// <param name="listImg"></param>
         /// <returns>Полное имя файла</returns>
         async Task<string> GetPosterImgRutor(List<RutorItemImg> listImg, 
-                                             DriverRutorToSoftInput param)
+                                             DriverToSoftInput param)
         {
             var serviceResult = new ServiceResult<string>
             {
-                ServiceName = "DriverService",
+                ServiceName = nameof(DriverService),
                 Location = "Выбор постера"
             };
 
@@ -339,6 +419,17 @@ namespace AyanaWebApi.Services
         /// <param name="lst"></param>
         /// <returns></returns>
         string FormatSpoilersRutor(List<RutorItemSpoiler> lst)
+        {
+            string spoilersResult = Environment.NewLine + Environment.NewLine;
+
+            foreach (var item in lst)
+            {
+                spoilersResult += $"[spoiler={item.Header}]{item.Body}[/spoiler]";
+            }
+            return spoilersResult;
+        }
+
+        string FormatSpoilersNnmclub(List<NnmclubItemSpoiler> lst)
         {
             string spoilersResult = Environment.NewLine + Environment.NewLine;
 

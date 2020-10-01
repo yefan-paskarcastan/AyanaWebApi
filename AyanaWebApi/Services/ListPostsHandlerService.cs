@@ -90,8 +90,8 @@ namespace AyanaWebApi.Services
                     break;
                 }
 
-                DriverRutorToSoftInput driverTorrentInput =
-                    _context.DriverRutorToSoftInputs
+                DriverToSoftInput driverTorrentInput =
+                    _context.DriverToSoftInputs
                     .Single(el => el.Active);
                 driverTorrentInput.ParseItemId = rutorItem.ResultObj.Id;
                 SoftPost post = await _driverService.Convert(driverTorrentInput);

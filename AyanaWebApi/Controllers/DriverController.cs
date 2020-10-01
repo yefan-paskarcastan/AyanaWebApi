@@ -22,8 +22,8 @@ namespace AyanaWebApi.Controllers
             _driverService = driverService;
         }
 
-        [HttpPost("RutorToSoft")]
-        public async Task<ActionResult<SoftPost>> RutorToSoft(DriverRutorToSoftInput param)
+        [HttpPost("ToSoft")]
+        public async Task<ActionResult<SoftPost>> ToSoft(DriverToSoftInput param)
         {
             SoftPost result = await _driverService.Convert(param);
             if (result != null)

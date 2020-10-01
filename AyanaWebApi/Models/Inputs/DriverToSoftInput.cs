@@ -3,13 +3,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AyanaWebApi.Models
 {
-    public class DriverRutorToSoftInput
+    public class DriverToSoftInput
     {
         public int Id { get; set; }
 
         public DateTime Created { get; set; }
 
         public bool Active { get; set; }
+
+        /// <summary>
+        /// Тип презентации, которую нужно преобразовать
+        /// </summary>
+        public string Type { get; set; }
 
         /// <summary>
         /// Id полученной с сайта раздачи
