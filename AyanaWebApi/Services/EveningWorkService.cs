@@ -10,9 +10,9 @@ using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services
 {
-    public class ListPostsHandlerService : IListPostsHandlerService
+    public class EveningWorkService : IEveningWorkService
     {
-        public ListPostsHandlerService(AyDbContext ayDbContext,
+        public EveningWorkService(AyDbContext ayDbContext,
                                        IRutorService rutorService,
                                        IDriverService driverService,
                                        ISoftService torrentSoftService,
@@ -25,9 +25,9 @@ namespace AyanaWebApi.Services
             _logService = logService;
         }
 
-        public async Task<string> Publishing()
+        public async Task<string> Publishing(int dayFromError)
         {
-            string date = DateTime.Now.AddDays(-3).ToShortDateString();
+            string date = DateTime.Now.AddDays(-dayFromError).ToShortDateString();
             IList<RutorListItem> errorList = 
                 _context
                 .RutorListItems

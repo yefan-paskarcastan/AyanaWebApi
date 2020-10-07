@@ -6,8 +6,8 @@ using AyanaWebApi.Models;
 
 namespace AyanaWebApi.Services.Interfaces
 {
-    public interface IListPostsHandlerService
+    public interface IEveningWorkService
     {
-        Task<string> Publishing();
+        Task<string> Publishing(int dayFromError);
     }
 }
