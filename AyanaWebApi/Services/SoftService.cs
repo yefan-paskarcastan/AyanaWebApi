@@ -201,11 +201,12 @@ namespace AyanaWebApi.Services
 
             string startKey = inputParam.AddPostFormScreenshotTemplateStartHeader;
             string endKey = inputParam.AddPostFormScreenshotTemplateEndHeader;
-            for (int i = 1; i < inputParam.AddPostFormMaxCountScreenshots
-                            && i < post.Imgs.Count; i++)
+            for (int i = 1; i <= inputParam.AddPostFormMaxCountScreenshots
+                            && i <= post.Imgs.Count; i++)
             {
                 manualContent.Add(startKey + i + endKey, post.Imgs[i - 1].ImgUri);
             }
+            //Нужно добавить обработку исключения на случай если строка слишком длинная https://stackoverflow.com/questions/38440631
             var content = new FormUrlEncodedContent(formContent.Union(manualContent));
 
             var result = await _httpClient.PostAsync(inputParam.AddPostAddress, content);

@@ -32,6 +32,16 @@ namespace AyanaWebApi.Models
         public int UriListCount { get; set; }
 
         /// <summary>
+        /// Адрес страницы для авторизцаии
+        /// </summary>
+        public string AuthPage { get; set; }
+
+        /// <summary>
+        /// Параметры Post запроса для авторизации
+        /// </summary>
+        public string AuthParam { get; set; }
+
+        /// <summary>
         /// Выражение XPath для парсинга даты добавления презентации
         /// </summary>
         public string XPathDate { get; set; }

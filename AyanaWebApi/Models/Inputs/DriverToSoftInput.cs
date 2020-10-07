@@ -28,6 +28,16 @@ namespace AyanaWebApi.Models
         public string TorrentUri { get; set; }
 
         /// <summary>
+        /// Адрес страницы для авторизации на сайте
+        /// </summary>
+        public string AuthPage { get; set; }
+
+        /// <summary>
+        /// Параметры запроса для авторизации на сайет
+        /// </summary>
+        public string AuthParam { get; set; }
+
+        /// <summary>
         /// Максимальный размер постера
         /// </summary>
         public int MaxPosterSize { get; set; }

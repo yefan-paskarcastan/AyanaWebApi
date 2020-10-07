@@ -190,7 +190,9 @@ namespace AyanaWebApi.Services
                                                             Path.GetRandomFileName().Replace('.', '_') + ".torrent",
                                                             param.ProxySocks5Addr,
                                                             param.ProxySocks5Port,
-                                                            param.ProxyActive);
+                                                            param.ProxyActive,
+                                                            new Uri(param.AuthPage),
+                                                            param.AuthParam);
                 if (torrentFullName == null)
                 {
                     serviceResult.Comment = "Не удалось загрузить торрент файл";
@@ -230,12 +232,16 @@ namespace AyanaWebApi.Services
         /// <param name="proxyAddress">Адрес тор прокси</param>
         /// <param name="proxyPort">Порт тор проски</param>
         /// <param name="proxyUsing">Использовать или нет тор прокси</param>
+        /// <param name="authPage">Адрес страницы для авторизации, если требуется</param>
+        /// <param name="authParam">Параметры запроса для авторизации</param>
         /// <returns>Полное имя сохранненого файла</returns>
         async Task<string> DownloadFile(string uri, 
                                         string fileName, 
                                         string proxyAddress, 
                                         int proxyPort,
-                                        bool proxyUsing)
+                                        bool proxyUsing,
+                                        Uri authPage = null,
+                                        string authParam = "")
         {
             var serviceResult = new ServiceResult<string>
             {
@@ -246,6 +252,11 @@ namespace AyanaWebApi.Services
             var webClient = new WebClient();
             if(proxyUsing)
                 webClient.Proxy = new HttpToSocks5Proxy(proxyAddress, proxyPort);
+            if (authPage != null)
+            {
+                webClient.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                await webClient.UploadStringTaskAsync(authPage, authParam);
+            }
 
             string folderName = Environment.CurrentDirectory 
                                     + "\\storage\\"

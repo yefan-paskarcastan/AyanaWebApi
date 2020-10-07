@@ -24,6 +24,16 @@ namespace AyanaWebApi.Models
         public string UriItem { get; set; }
 
         /// <summary>
+        /// Адрес страницы для авторизцаии
+        /// </summary>
+        public string AuthPage { get; set; }
+
+        /// <summary>
+        /// Параметры Post запроса для авторизации
+        /// </summary>
+        public string AuthParam { get; set; }
+
+        /// <summary>
         /// Адрес тор прокси
         /// </summary>
         public string ProxySocks5Addr { get; set; }

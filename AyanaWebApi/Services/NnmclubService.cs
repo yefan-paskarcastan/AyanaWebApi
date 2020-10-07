@@ -73,7 +73,7 @@ namespace AyanaWebApi.Services
                 IList<NnmclubListItem> oldItems =
                     _context
                     .NnmclubListItems
-                    .OrderByDescending(d => d.Added)
+                    .OrderByDescending(d => d.Created)
                     .Take(200)
                     .ToList();
                 IList<NnmclubListItem> onlyNew =
@@ -113,7 +113,9 @@ namespace AyanaWebApi.Services
                     param.UriList + (i * param.UriListIncrement),
                     param.ProxySocks5Addr,
                     param.ProxySocks5Port,
-                    param.ProxyActive);
+                    param.ProxyActive,
+                    new Uri(param.AuthPage),
+                    param.AuthParam);
 
                     if (page.ResultObj != null)
                     {
@@ -175,10 +177,13 @@ namespace AyanaWebApi.Services
 
             if (listItem != null)
             {
-                ServiceResult<string> page = await GetPage(param.UriItem + listItem.Href,
+                ServiceResult<string> page = await GetPage(
+                    param.UriItem + listItem.Href,
                     param.ProxySocks5Addr,
                     param.ProxySocks5Port,
-                    param.ProxyActive);
+                    param.ProxyActive,
+                    new Uri(param.AuthPage),
+                    param.AuthParam);
                 if (page.ResultObj != null)
                 {
                     var htmlDocument = new HtmlDocument();
@@ -401,12 +406,14 @@ namespace AyanaWebApi.Services
         /// <param name="port">Порт прокси</param>
         /// <param name="usingProxy">Использовать или нет тор прокси</param>
         /// <returns>Веб страница, если произошла ошибка возвращает null</returns>
-        async Task<ServiceResult<string>> GetPage(string uri, string address, int port, bool usingProxy)
+        async Task<ServiceResult<string>> GetPage(string uri, string address, int port, bool usingProxy, Uri authPage, string authParam)
         {
             var result = new ServiceResult<string>();
-            var webClient = new WebClient();
+            var webClient = new WebClientAwareCookie();
             if (usingProxy)
                 webClient.Proxy = new HttpToSocks5Proxy(address, port);
+            webClient.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+            await webClient.UploadStringTaskAsync(authPage, authParam);
 
             byte[] data = null;
             try
@@ -415,7 +422,7 @@ namespace AyanaWebApi.Services
             }
             catch (WebException ex)
             {
-                result.ServiceName = nameof(RutorService);
+                result.ServiceName = nameof(NnmclubService);
                 result.Comment = "Указан неврный адрес или произошла другая сетевая ошибка";
                 result.Location = "Загрузка веб страницы";
                 result.ExceptionMessage = ex.Message;
