@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
@@ -13,16 +15,19 @@ namespace AyanaWebApi.Services
     public class EveningWorkService : IEveningWorkService
     {
         public EveningWorkService(AyDbContext ayDbContext,
-                                       IRutorService rutorService,
-                                       IDriverService driverService,
-                                       ISoftService torrentSoftService,
-                                       ILogService logService)
+                                  IRutorService rutorService,
+                                  IDriverService driverService,
+                                  ISoftService softService,
+                                  ILogService logService,
+                                  ILogger<EveningWorkService> logger)
         {
             _context = ayDbContext;
             _rutorService = rutorService;
             _driverService = driverService;
-            _torrentSoftService = torrentSoftService;
+            _softService = softService;
             _logService = logService;
+            _logger = logger;
+            logger.LogInformation("It's work!");
         }
 
         public async Task<string> Publishing(int dayFromError)
@@ -36,7 +41,7 @@ namespace AyanaWebApi.Services
 
             if (errorList.Count > 0)
             {
-                ServiceResult<string> resultError = await Flow(errorList);
+                ServiceResult<string> resultError = await FlowRutor(errorList);
                 if (resultError.ResultObj == null)
                 {
                     _logService.Write(resultError);
@@ -52,7 +57,7 @@ namespace AyanaWebApi.Services
             if (rutorListItem.ResultObj == null)
                 return "Не удалось проверить список раздач rutor. RutorCheckListInputId = " + rutorCheckListInput.Id;
 
-            ServiceResult<string> result = await Flow(rutorListItem.ResultObj);
+            ServiceResult<string> result = await FlowRutor(rutorListItem.ResultObj);
             if (result.ResultObj == null)
             {
                 _logService.Write(result);
@@ -67,7 +72,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="lst">Список презентаций, которые были получены с rutor</param>
         /// <returns>Если все презентации выложены успешно, то ResultObj != null</returns>
-        async Task<ServiceResult<string>> Flow(IList<RutorListItem> lst)
+        async Task<ServiceResult<string>> FlowRutor(IList<RutorListItem> lst)
         {
             var serviceResult = new ServiceResult<string>
             {
@@ -90,11 +95,11 @@ namespace AyanaWebApi.Services
                     break;
                 }
 
-                DriverToSoftInput driverTorrentInput =
+                DriverToSoftInput driverInput =
                     _context.DriverToSoftInputs
-                    .Single(el => el.Active);
-                driverTorrentInput.ParseItemId = rutorItem.ResultObj.Id;
-                SoftPost post = await _driverService.Convert(driverTorrentInput);
+                    .Single(el => el.Active && el.Type == nameof(RutorItem));
+                driverInput.ParseItemId = rutorItem.ResultObj.Id;
+                SoftPost post = await _driverService.Convert(driverInput);
                 if (post == null)
                 {
                     serviceResult.Comment = "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
@@ -102,27 +107,27 @@ namespace AyanaWebApi.Services
                     break;
                 }
 
-                SoftPostInput torrentSoftPostInput =
+                SoftPostInput softPostInput =
                     _context.SoftPostInputs
                     .Single(el => el.Active);
-                torrentSoftPostInput.SoftPostId = post.Id;
-                torrentSoftPostInput.PosterUploadQueryString =
+                softPostInput.SoftPostId = post.Id;
+                softPostInput.PosterUploadQueryString =
                     _context.DictionaryValues
-                    .Where(el => el.DictionaryName == torrentSoftPostInput.PosterUploadQueryStringId)
+                    .Where(el => el.DictionaryName == softPostInput.PosterUploadQueryStringId)
                     .ToDictionary(k => k.Key, v => v.Value);
-                torrentSoftPostInput.TorrentUploadQueryString =
+                softPostInput.TorrentUploadQueryString =
                     _context.DictionaryValues
-                    .Where(el => el.DictionaryName == torrentSoftPostInput.TorrentUploadQueryStringId)
+                    .Where(el => el.DictionaryName == softPostInput.TorrentUploadQueryStringId)
                     .ToDictionary(k => k.Key, v => v.Value);
-                torrentSoftPostInput.FormData =
+                softPostInput.FormData =
                     _context.DictionaryValues
-                    .Where(el => el.DictionaryName == torrentSoftPostInput.FormDataId)
+                    .Where(el => el.DictionaryName == softPostInput.FormDataId)
                     .ToDictionary(k => k.Key, v => v.Value);
-                torrentSoftPostInput.AuthData =
+                softPostInput.AuthData =
                     _context.DictionaryValues
-                    .Where(el => el.DictionaryName == torrentSoftPostInput.AuthDataId)
+                    .Where(el => el.DictionaryName == softPostInput.AuthDataId)
                     .ToDictionary(k => k.Key, v => v.Value);
-                ServiceResult<SoftResult> result = await _torrentSoftService.AddPost(torrentSoftPostInput);
+                ServiceResult<SoftResult> result = await _softService.AddPost(softPostInput);
                 if (result.ResultObj.SoftPost == null
                     || !result.ResultObj.SendPostIsSuccess
                     || !result.ResultObj.PosterIsSuccess
@@ -136,10 +141,21 @@ namespace AyanaWebApi.Services
             return serviceResult;
         }
 
-        AyDbContext _context;
-        IRutorService _rutorService;
-        IDriverService _driverService;
-        ISoftService _torrentSoftService;
-        ILogService _logService;
+        /*/// <summary>
+        /// Проводит операции с полученным списком презентаций по публикации на сайте soft
+        /// </summary>
+        /// <param name="lst">Список презентаций, которые были получены с nnmclub</param>
+        /// <returns>Если все презентации выложены успешно, то ResultObj != null</returns>
+        async Task<string> FlowNnmclub(IList<NnmclubListItem> lst)
+        {
+
+        }*/
+
+        readonly AyDbContext _context;
+        readonly ILogger<EveningWorkService> _logger;
+        readonly IRutorService _rutorService;
+        readonly IDriverService _driverService;
+        readonly ISoftService _softService;
+        readonly ILogService _logService;
     }
 }

@@ -22,6 +22,7 @@ namespace AyanaWebApi.Models
 
         public DbSet<User> Users { get; set; }
         public DbSet<Log> Logs { get; set; }
+        public DbSet<NLog> NLogs { get; set; }
 
         public DbSet<RutorListItem> RutorListItems { get; set; }
         public DbSet<RutorItem> RutorItems { get; set; }

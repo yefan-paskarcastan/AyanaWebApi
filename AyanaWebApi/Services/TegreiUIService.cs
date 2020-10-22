@@ -30,6 +30,6 @@ namespace AyanaWebApi.Services
             return lst;
         }
 
-        AyDbContext _context;
+        readonly AyDbContext _context;
     }
 }

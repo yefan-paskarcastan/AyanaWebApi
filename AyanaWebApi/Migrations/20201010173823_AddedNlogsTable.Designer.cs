@@ -4,14 +4,16 @@ using AyanaWebApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace AyanaWebApi.Migrations
 {
     [DbContext(typeof(AyDbContext))]
-    partial class AyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20201010173823_AddedNlogsTable")]
+    partial class AddedNlogsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -155,8 +157,8 @@ namespace AyanaWebApi.Migrations
                     b.Property<string>("CallSite")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Date")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Exception")
                         .HasColumnType("nvarchar(max)");
