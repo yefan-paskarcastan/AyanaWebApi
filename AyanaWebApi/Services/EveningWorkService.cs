@@ -18,34 +18,30 @@ namespace AyanaWebApi.Services
                                   IRutorService rutorService,
                                   IDriverService driverService,
                                   ISoftService softService,
-                                  ILogService logService,
                                   ILogger<EveningWorkService> logger)
         {
             _context = ayDbContext;
             _rutorService = rutorService;
             _driverService = driverService;
             _softService = softService;
-            _logService = logService;
             _logger = logger;
-            logger.LogInformation("It's work!");
         }
 
-        public async Task<string> Publishing(int dayFromError)
+        public async Task<bool> Publishing(int dayFromError)
         {
-            string date = DateTime.Now.AddDays(-dayFromError).ToShortDateString();
             IList<RutorListItem> errorList = 
                 _context
                 .RutorListItems
-                .FromSqlInterpolated($"RutorListItemsError {date}")
+                .FromSqlInterpolated($"RutorListItemsError {DateTime.Now.AddDays(-dayFromError)}")
                 .ToList();
 
             if (errorList.Count > 0)
             {
-                ServiceResult<string> resultError = await FlowRutor(errorList);
-                if (resultError.ResultObj == null)
+                bool resTails = await FlowRutor(errorList);
+                if (!resTails)
                 {
-                    _logService.Write(resultError);
-                    return "Произошла ошибка при публикации хвостов";
+                    _logger.LogError("Ошибка пакетной публикации хвостов Rutor");
+                    return false;
                 }
             }
 
@@ -55,34 +51,31 @@ namespace AyanaWebApi.Services
                 .Single(el => el.Active);
             ServiceResult<IList<RutorListItem>> rutorListItem = await _rutorService.CheckList(rutorCheckListInput);
             if (rutorListItem.ResultObj == null)
-                return "Не удалось проверить список раздач rutor. RutorCheckListInputId = " + rutorCheckListInput.Id;
-
-            ServiceResult<string> result = await FlowRutor(rutorListItem.ResultObj);
-            if (result.ResultObj == null)
             {
-                _logService.Write(result);
-                return "Произошла ошибка при публикации презентаций";
+                _logger.LogError("Ошибка проверки новых презентаций Rutor. RutorCheckListInputId = " + rutorCheckListInput.Id);
+                return false;
             }
 
-            return "Посты успешно добавлены.";
+            bool res = await FlowRutor(rutorListItem.ResultObj);
+            if (!res)
+            {
+                _logger.LogError("Ошибка пакетной публикации рогов Rutor");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
         /// Проводит операции с полученным списком презентаций по публикации на сайте soft
         /// </summary>
         /// <param name="lst">Список презентаций, которые были получены с rutor</param>
-        /// <returns>Если все презентации выложены успешно, то ResultObj != null</returns>
-        async Task<ServiceResult<string>> FlowRutor(IList<RutorListItem> lst)
+        /// <returns>Если операция выполнена успешно - true, инчае false</returns>
+        async Task<bool> FlowRutor(IList<RutorListItem> lst)
         {
-            var serviceResult = new ServiceResult<string>
-            {
-                ServiceName = "ListPostsHandlerService",
-                Location = "Пакетная публикация на сайт soft",
-                ResultObj = "Success"
-            };
-
             foreach (RutorListItem item in lst)
             {
+                //Парсим
                 RutorParseItemInput paramRutorItem =
                     _context.RutorParseItemInputs
                     .Single(el => el.Active);
@@ -90,11 +83,11 @@ namespace AyanaWebApi.Services
                 ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
                 if (rutorItem.ResultObj == null)
                 {
-                    serviceResult.Comment = "Не удалось распарсить пост RutorItem. ListItemId = " + item.Id;
-                    serviceResult.ResultObj = null;
-                    break;
+                    _logger.LogError("Не удалось распарсить пост RutorItem. ListItemId = " + item.Id);
+                    return false;
                 }
 
+                //Подготавливаем
                 DriverToSoftInput driverInput =
                     _context.DriverToSoftInputs
                     .Single(el => el.Active && el.Type == nameof(RutorItem));
@@ -102,11 +95,11 @@ namespace AyanaWebApi.Services
                 SoftPost post = await _driverService.Convert(driverInput);
                 if (post == null)
                 {
-                    serviceResult.Comment = "Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id;
-                    serviceResult.ResultObj = null;
-                    break;
+                    _logger.LogError("Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id);
+                    return false;
                 }
 
+                //Выкладываем
                 SoftPostInput softPostInput =
                     _context.SoftPostInputs
                     .Single(el => el.Active);
@@ -133,12 +126,11 @@ namespace AyanaWebApi.Services
                     || !result.ResultObj.PosterIsSuccess
                     || !result.ResultObj.TorrentFileIsSuccess)
                 {
-                    serviceResult.Comment = "Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id;
-                    serviceResult.ResultObj = null;
-                    break;
+                    _logger.LogError("Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id);
+                    return false;
                 }
             }
-            return serviceResult;
+            return true;
         }
 
         /*/// <summary>
@@ -156,6 +148,5 @@ namespace AyanaWebApi.Services
         readonly IRutorService _rutorService;
         readonly IDriverService _driverService;
         readonly ISoftService _softService;
-        readonly ILogService _logService;
     }
 }

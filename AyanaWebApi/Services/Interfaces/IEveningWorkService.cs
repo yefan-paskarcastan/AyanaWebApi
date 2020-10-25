@@ -8,6 +8,6 @@ namespace AyanaWebApi.Services.Interfaces
 {
     public interface IEveningWorkService
     {
-        Task<string> Publishing(int dayFromError);
+        Task<bool> Publishing(int dayFromError);
     }
 }

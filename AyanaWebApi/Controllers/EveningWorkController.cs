@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 using AyanaWebApi.Services.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace AyanaWebApi.Controllers
 {
@@ -25,7 +24,12 @@ namespace AyanaWebApi.Controllers
         [HttpPost("Publishing_{dayFromError}")]
         public async Task<ActionResult<string>> Publishing(int dayFromError)
         {
-            return await _evServices.Publishing(dayFromError);
+            bool res = await _evServices.Publishing(dayFromError);
+            if (!res)
+            {
+                return "Ошибка при пакетной публикации постов";
+            }
+            return "Презентации успешно добавлены";
         }
 
         readonly IEveningWorkService _evServices;
