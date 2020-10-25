@@ -46,11 +46,11 @@ namespace AyanaWebApi.Controllers
         [HttpPost("CheckList")]
         public async Task<ActionResult<IList<NnmclubListItem>>> CheckList([FromBody]NnmclubCheckListInput input)
         {
-            ServiceResult<IList<NnmclubListItem>> result = await _nnmclubService.CheckList(input);
+            IList<NnmclubListItem> result = await _nnmclubService.CheckList(input);
 
-            if (result.ResultObj != null)
+            if (result != null)
             {
-                return Ok(result.ResultObj);
+                return Ok(result);
             }
             return BadRequest("При проверке списка раздач произошла ошибка");
         }

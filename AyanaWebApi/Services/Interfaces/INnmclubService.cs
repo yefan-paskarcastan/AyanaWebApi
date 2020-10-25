@@ -13,7 +13,7 @@ namespace AyanaWebApi.Services.Interfaces
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        Task<ServiceResult<IList<NnmclubListItem>>> CheckList(NnmclubCheckListInput param);
+        Task<IList<NnmclubListItem>> CheckList(NnmclubCheckListInput param);
 
         /// <summary>
         /// Парсит указанную презентацию

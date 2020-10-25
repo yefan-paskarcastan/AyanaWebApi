@@ -7,6 +7,8 @@ using System.Text;
 using System.Globalization;
 using System.Web;
 
+using Microsoft.Extensions.Logging;
+
 using HtmlAgilityPack;
 using MihaZupan;
 
@@ -22,9 +24,11 @@ namespace AyanaWebApi.Services
     public class NnmclubService : INnmclubService
     {
         public NnmclubService(AyDbContext ayDbContext,
+                              ILogger<NnmclubService> logger,
                               ILogService logService)
         {
             _context = ayDbContext;
+            _logger = logger;
             _logs = logService;
         }
 
@@ -56,17 +60,15 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<IList<NnmclubListItem>>> CheckList(NnmclubCheckListInput param)
+        public async Task<IList<NnmclubListItem>> CheckList(NnmclubCheckListInput param)
         {
-            ServiceResult<IList<NnmclubListItem>> items = await GetList(param);
-            items.ServiceName = nameof(NnmclubService);
-            items.Location = "Проверка списка клуба";
+            IList<NnmclubListItem> items = await GetList(param);
 
-            if (items.ResultObj != null)
+            if (items != null)
             {
                 if (_context.NnmclubListItems.Count() == 0)
                 {
-                    _context.NnmclubListItems.AddRange(items.ResultObj);
+                    _context.NnmclubListItems.AddRange(items);
                     _context.SaveChanges();
                     return items;
                 }
@@ -77,39 +79,34 @@ namespace AyanaWebApi.Services
                     .Take(200)
                     .ToList();
                 IList<NnmclubListItem> onlyNew =
-                    items.ResultObj
-                    .Except(oldItems, new NnmclubListItemComparer())
+                    items.Except(oldItems, new NnmclubListItemComparer())
                     .ToList();
 
                 _context.NnmclubListItems.AddRange(onlyNew);
                 _context.SaveChanges();
-                items.ResultObj = onlyNew;
-                return items;
+                return onlyNew;
             }
-            items.Comment = "При получении полного списка презентаций вернулось null";
-            _logs.Write(items);
-            return items;
+            _logger.LogError("При получении последних презентаций вернулось null");
+            return null;
         }
 
         #region Private
         readonly AyDbContext _context;
         readonly ILogService _logs;
+        readonly ILogger<NnmclubService> _logger;
 
         /// <summary>
         /// Получает последние презентации клуба
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        async Task<ServiceResult<IList<NnmclubListItem>>> GetList(NnmclubCheckListInput param)
+        async Task<IList<NnmclubListItem>> GetList(NnmclubCheckListInput param)
         {
-            var result = new ServiceResult<IList<NnmclubListItem>>();
-            result.ServiceName = nameof(NnmclubService);
-            result.Location = "Получение полного списка презентаций";
-            var tmpList = new List<NnmclubListItem>();
+            var result = new List<NnmclubListItem>();
 
             for (int i = param.UriListCount; i >= 0; i--)
             {
-                ServiceResult<string> page = await GetPage(
+                string page = await GetPage(
                     param.UriList + (i * param.UriListIncrement),
                     param.ProxySocks5Addr,
                     param.ProxySocks5Port,
@@ -117,45 +114,42 @@ namespace AyanaWebApi.Services
                     new Uri(param.AuthPage),
                     param.AuthParam);
 
-                    if (page.ResultObj != null)
-                    {
-                        var htmlDocument = new HtmlDocument();
-                        htmlDocument.LoadHtml(page.ResultObj);
-                        HtmlNodeCollection nodesDate = htmlDocument.DocumentNode.SelectNodes(param.XPathDate);
-                        HtmlNodeCollection nodesName = htmlDocument.DocumentNode.SelectNodes(param.XPathName);
+                if (page != null)
+                {
+                    var htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(page);
+                    HtmlNodeCollection nodesDate = htmlDocument.DocumentNode.SelectNodes(param.XPathDate);
+                    HtmlNodeCollection nodesName = htmlDocument.DocumentNode.SelectNodes(param.XPathName);
 
-                        if (nodesDate != null &&
-                            nodesName != null)
-                        {
-                            var ruCultutre = new CultureInfo("RU-ru");
-                            var postQuery =
-                                from date in nodesDate
-                                join name in nodesName on date.Line equals name.Line + 6
-                                select new NnmclubListItem
-                                {
-                                    Created = DateTime.Now,
-                                    Added = DateTime.ParseExact(
-                                        HttpUtility.HtmlDecode(
-                                            date.InnerText.Remove(0, date.InnerText.Length - param.DateTimeFormat.Length)),
-                                        param.DateTimeFormat,
-                                        ruCultutre,
-                                        DateTimeStyles.AllowInnerWhite),
-                                    Name = HttpUtility.HtmlDecode(
-                                        name.GetAttributeValue("title", null)),
-                                    Href = name.GetAttributeValue("href", null)
-                                };
-                            tmpList.AddRange(postQuery.ToList());
-                            continue;
-                        }
-                        result.Comment = "XPath выражение вернуло null";
-                        _logs.Write(result);
-                        return result;
+                    if (nodesDate != null &&
+                        nodesName != null)
+                    {
+                        var ruCultutre = new CultureInfo("RU-ru");
+                        var postQuery =
+                            from date in nodesDate
+                            join name in nodesName on date.Line equals name.Line + 6
+                            select new NnmclubListItem
+                            {
+                                Created = DateTime.Now,
+                                Added = DateTime.ParseExact(
+                                    HttpUtility.HtmlDecode(
+                                        date.InnerText.Remove(0, date.InnerText.Length - param.DateTimeFormat.Length)),
+                                    param.DateTimeFormat,
+                                    ruCultutre,
+                                    DateTimeStyles.AllowInnerWhite),
+                                Name = HttpUtility.HtmlDecode(
+                                    name.GetAttributeValue("title", null)),
+                                Href = name.GetAttributeValue("href", null)
+                            };
+                        result.AddRange(postQuery.ToList());
+                        continue;
                     }
-                    result.Comment = "При получении веб страницы вернулось null";
-                    _logs.Write(result);
-                    return result;
+                    _logger.LogError("XPath выражение вернуло null");
+                    return null;
+                }
+                _logger.LogError("При получении веб страницы вернулось null");
+                return null;
             }
-            result.ResultObj = tmpList;
             return result;
         }
 
@@ -177,17 +171,17 @@ namespace AyanaWebApi.Services
 
             if (listItem != null)
             {
-                ServiceResult<string> page = await GetPage(
+                string page = await GetPage(
                     param.UriItem + listItem.Href,
                     param.ProxySocks5Addr,
                     param.ProxySocks5Port,
                     param.ProxyActive,
                     new Uri(param.AuthPage),
                     param.AuthParam);
-                if (page.ResultObj != null)
+                if (page != null)
                 {
                     var htmlDocument = new HtmlDocument();
-                    htmlDocument.LoadHtml(page.ResultObj);
+                    htmlDocument.LoadHtml(page);
 
                     List<NnmclubItemSpoiler> listSpoiler = GetSpoilers(htmlDocument,
                                                                        param.XPathSpoiler);
@@ -349,7 +343,7 @@ namespace AyanaWebApi.Services
                               string xPathSpoilers, 
                               string xPathPoster, 
                               string xPathImgs, 
-                              List<string> xPathTrash)
+                              string xPathTrash)
         {
             HtmlNode nodeDescription =
                 doc.DocumentNode.SelectSingleNode(xPathDesc);
@@ -385,15 +379,12 @@ namespace AyanaWebApi.Services
             if (nodePosterRemove != null)
                 nodePosterRemove.Remove();
 
-            foreach (string item in xPathTrash)
-            {
-                HtmlNodeCollection htmlNodes = nodeDescription.SelectNodes(item);
-                if (htmlNodes != null)
-                    foreach (HtmlNode node in htmlNodes)
-                    {
-                        node.Remove();
-                    }
-            }
+            HtmlNodeCollection htmlNodes = nodeDescription.SelectNodes(xPathTrash);
+            if (htmlNodes != null)
+                foreach (HtmlNode node in htmlNodes)
+                {
+                    node.Remove();
+                }
 
             return nodeDescription.InnerHtml;
         }
@@ -406,28 +397,23 @@ namespace AyanaWebApi.Services
         /// <param name="port">Порт прокси</param>
         /// <param name="usingProxy">Использовать или нет тор прокси</param>
         /// <returns>Веб страница, если произошла ошибка возвращает null</returns>
-        async Task<ServiceResult<string>> GetPage(string uri, string address, int port, bool usingProxy, Uri authPage, string authParam)
+        async Task<string> GetPage(string uri, string address, int port, bool usingProxy, Uri authPage, string authParam)
         {
-            var result = new ServiceResult<string>();
             var webClient = new WebClientAwareCookie();
             if (usingProxy)
                 webClient.Proxy = new HttpToSocks5Proxy(address, port);
             webClient.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
             await webClient.UploadStringTaskAsync(authPage, authParam);
 
-            byte[] data = null;
+            byte[] data;
             try
             {
                 data = await webClient.DownloadDataTaskAsync(new Uri(uri));
             }
             catch (WebException ex)
             {
-                result.ServiceName = nameof(NnmclubService);
-                result.Comment = "Указан неврный адрес или произошла другая сетевая ошибка";
-                result.Location = "Загрузка веб страницы";
-                result.ExceptionMessage = ex.Message;
-                _logs.Write(result);
-                return result;
+                _logger.LogError(ex, "Указан неврный адрес или произошла другая сетевая ошибка");
+                return null;
             }
 
             if (data != null)
@@ -436,9 +422,10 @@ namespace AyanaWebApi.Services
                 Encoding utf8 = Encoding.GetEncoding("UTF-8");
                 Encoding win1251 = Encoding.GetEncoding("windows-1251");
                 data = Encoding.Convert(win1251, utf8, data);
-                result.ResultObj = utf8.GetString(data);
+                return utf8.GetString(data);
             }
-            return result;
+            _logger.LogError("После загрузки вернулось null");
+            return null;
         }
         #endregion
     }

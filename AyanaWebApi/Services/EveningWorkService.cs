@@ -16,12 +16,14 @@ namespace AyanaWebApi.Services
     {
         public EveningWorkService(AyDbContext ayDbContext,
                                   IRutorService rutorService,
+                                  INnmclubService nnmclubService,
                                   IDriverService driverService,
                                   ISoftService softService,
                                   ILogger<EveningWorkService> logger)
         {
             _context = ayDbContext;
             _rutorService = rutorService;
+            _nnmclubService = nnmclubService;
             _driverService = driverService;
             _softService = softService;
             _logger = logger;
@@ -29,9 +31,16 @@ namespace AyanaWebApi.Services
 
         public async Task<bool> Publishing(int dayFromError)
         {
-            return await ManagerRutor(dayFromError);
+            bool resultNnmclub = await ManagerNnmclub();
+            bool resultRutor = await ManagerRutor(dayFromError);
+            return resultRutor && resultNnmclub;
         }
 
+        /// <summary>
+        /// Запуск пакетного парсинга Rutor
+        /// </summary>
+        /// <param name="dayFromError"></param>
+        /// <returns></returns>
         async Task<bool> ManagerRutor(int dayFromError)
         {
             IList<RutorListItem> errorList =
@@ -57,7 +66,7 @@ namespace AyanaWebApi.Services
             ServiceResult<IList<RutorListItem>> rutorListItem = await _rutorService.CheckList(rutorCheckListInput);
             if (rutorListItem.ResultObj == null)
             {
-                _logger.LogError("Ошибка проверки новых презентаций. RutorCheckListInputId = " + rutorCheckListInput.Id);
+                _logger.LogError("Ошибка проверки новых презентаций. RutorCheckListInput_Id = " + rutorCheckListInput.Id);
                 return false;
             }
 
@@ -67,7 +76,31 @@ namespace AyanaWebApi.Services
                 _logger.LogError("Ошибка пакетной публикации рогов");
                 return false;
             }
+            return true;
+        }
 
+        /// <summary>
+        /// Запуск пакетного парсинаг Nnmclub
+        /// </summary>
+        /// <returns></returns>
+        async Task<bool> ManagerNnmclub()
+        {
+            NnmclubCheckListInput inp =
+                _context
+                .NnmclubCheckListInputs
+                .Single(el => el.Active);
+            IList<NnmclubListItem> list = await _nnmclubService.CheckList(inp);
+            if (list == null)
+            {
+                _logger.LogError("Ошибка проверки новых презентаций. NnmclubCheckListInput_Id = " + inp.Id);
+                return false;
+            }
+            bool res = await FlowNnmclub(list);
+            if (!res)
+            {
+                _logger.LogError("Ошибка пакетной публикации рогов");
+                return false;
+            }
             return true;
         }
 
@@ -208,6 +241,7 @@ namespace AyanaWebApi.Services
         readonly AyDbContext _context;
         readonly ILogger<EveningWorkService> _logger;
         readonly IRutorService _rutorService;
+        readonly INnmclubService _nnmclubService;
         readonly IDriverService _driverService;
         readonly ISoftService _softService;
     }

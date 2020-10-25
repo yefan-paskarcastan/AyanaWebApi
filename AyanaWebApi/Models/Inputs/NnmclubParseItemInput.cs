@@ -76,7 +76,7 @@ namespace AyanaWebApi.Models
         /// <summary>
         /// XPath выражения для удаления мусора из презентации
         /// </summary>
-        public List<string> XPathTrash { get; set; }
+        public string XPathTrash { get; set; }
 
         /// <summary>
         /// Id объекта листа, по которму будет строится адрес страницы
