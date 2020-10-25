@@ -41,6 +41,8 @@ namespace AyanaWebApi.Models
         #region Tables of setting
         public DbSet<RutorCheckListInput> RutorCheckListInputs { get; set; }
         public DbSet<RutorParseItemInput> RutorParseItemInputs { get; set; }
+        public DbSet<NnmclubCheckListInput> NnmclubCheckListInputs { get; set; }
+        /*public DbSet<NnmclubParseItemInput> NnmclubParseItemInputs { get; set; }*/
         public DbSet<DriverToSoftInput> DriverToSoftInputs { get; set; }
         public DbSet<ImghostParsingInput> ImghostParsingInputs { get; set; }
         public DbSet<SoftPostInput> SoftPostInputs { get; set; }

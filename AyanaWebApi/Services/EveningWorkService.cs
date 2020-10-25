@@ -29,7 +29,12 @@ namespace AyanaWebApi.Services
 
         public async Task<bool> Publishing(int dayFromError)
         {
-            IList<RutorListItem> errorList = 
+            return await ManagerRutor(dayFromError);
+        }
+
+        async Task<bool> ManagerRutor(int dayFromError)
+        {
+            IList<RutorListItem> errorList =
                 _context
                 .RutorListItems
                 .FromSqlInterpolated($"RutorListItemsError {DateTime.Now.AddDays(-dayFromError)}")
@@ -40,7 +45,7 @@ namespace AyanaWebApi.Services
                 bool resTails = await FlowRutor(errorList);
                 if (!resTails)
                 {
-                    _logger.LogError("Ошибка пакетной публикации хвостов Rutor");
+                    _logger.LogError("Ошибка пакетной публикации хвостов");
                     return false;
                 }
             }
@@ -52,14 +57,14 @@ namespace AyanaWebApi.Services
             ServiceResult<IList<RutorListItem>> rutorListItem = await _rutorService.CheckList(rutorCheckListInput);
             if (rutorListItem.ResultObj == null)
             {
-                _logger.LogError("Ошибка проверки новых презентаций Rutor. RutorCheckListInputId = " + rutorCheckListInput.Id);
+                _logger.LogError("Ошибка проверки новых презентаций. RutorCheckListInputId = " + rutorCheckListInput.Id);
                 return false;
             }
 
             bool res = await FlowRutor(rutorListItem.ResultObj);
             if (!res)
             {
-                _logger.LogError("Ошибка пакетной публикации рогов Rutor");
+                _logger.LogError("Ошибка пакетной публикации рогов");
                 return false;
             }
 
@@ -83,7 +88,7 @@ namespace AyanaWebApi.Services
                 ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
                 if (rutorItem.ResultObj == null)
                 {
-                    _logger.LogError("Не удалось распарсить пост RutorItem. ListItemId = " + item.Id);
+                    _logger.LogError("Не удалось распарсить пост. ListItemId = " + item.Id);
                     return false;
                 }
 
@@ -133,15 +138,72 @@ namespace AyanaWebApi.Services
             return true;
         }
 
-        /*/// <summary>
+        /// <summary>
         /// Проводит операции с полученным списком презентаций по публикации на сайте soft
         /// </summary>
         /// <param name="lst">Список презентаций, которые были получены с nnmclub</param>
         /// <returns>Если все презентации выложены успешно, то ResultObj != null</returns>
-        async Task<string> FlowNnmclub(IList<NnmclubListItem> lst)
+        async Task<bool> FlowNnmclub(IList<NnmclubListItem> lst)
         {
+            foreach (NnmclubListItem item in lst)
+            {
+                //Парсим
+                RutorParseItemInput paramRutorItem =
+                    _context.RutorParseItemInputs
+                    .Single(el => el.Active);
+                paramRutorItem.ListItemId = item.Id;
+                ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
+                if (rutorItem.ResultObj == null)
+                {
+                    _logger.LogError("Не удалось распарсить пост. ListItemId = " + item.Id);
+                    return false;
+                }
 
-        }*/
+                //Подготавливаем
+                DriverToSoftInput driverInput =
+                    _context.DriverToSoftInputs
+                    .Single(el => el.Active && el.Type == nameof(RutorItem));
+                driverInput.ParseItemId = rutorItem.ResultObj.Id;
+                SoftPost post = await _driverService.Convert(driverInput);
+                if (post == null)
+                {
+                    _logger.LogError("Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id);
+                    return false;
+                }
+
+                //Выкладываем
+                SoftPostInput softPostInput =
+                    _context.SoftPostInputs
+                    .Single(el => el.Active);
+                softPostInput.SoftPostId = post.Id;
+                softPostInput.PosterUploadQueryString =
+                    _context.DictionaryValues
+                    .Where(el => el.DictionaryName == softPostInput.PosterUploadQueryStringId)
+                    .ToDictionary(k => k.Key, v => v.Value);
+                softPostInput.TorrentUploadQueryString =
+                    _context.DictionaryValues
+                    .Where(el => el.DictionaryName == softPostInput.TorrentUploadQueryStringId)
+                    .ToDictionary(k => k.Key, v => v.Value);
+                softPostInput.FormData =
+                    _context.DictionaryValues
+                    .Where(el => el.DictionaryName == softPostInput.FormDataId)
+                    .ToDictionary(k => k.Key, v => v.Value);
+                softPostInput.AuthData =
+                    _context.DictionaryValues
+                    .Where(el => el.DictionaryName == softPostInput.AuthDataId)
+                    .ToDictionary(k => k.Key, v => v.Value);
+                ServiceResult<SoftResult> result = await _softService.AddPost(softPostInput);
+                if (result.ResultObj.SoftPost == null
+                    || !result.ResultObj.SendPostIsSuccess
+                    || !result.ResultObj.PosterIsSuccess
+                    || !result.ResultObj.TorrentFileIsSuccess)
+                {
+                    _logger.LogError("Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id);
+                    return false;
+                }
+            }
+            return true;
+        }
 
         readonly AyDbContext _context;
         readonly ILogger<EveningWorkService> _logger;
