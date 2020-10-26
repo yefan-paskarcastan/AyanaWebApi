@@ -37,22 +37,17 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<NnmclubItem>> ParseItem(NnmclubParseItemInput param)
+        public async Task<NnmclubItem> ParseItem(NnmclubParseItemInput param)
         {
-            ServiceResult<NnmclubItem> item = await GetItem(param);
-            item.ServiceName = nameof(NnmclubService);
-            item.Location = "Парсинг презентации";
-
-            if (item.ResultObj != null)
+            NnmclubItem item = await GetItem(param);
+            if (item != null)
             {
-                _context.NnmclubItems.Add(item.ResultObj);
+                _context.NnmclubItems.Add(item);
                 _context.SaveChanges();
                 return item;
             }
-
-            item.Comment = "Не удалось распрарсить презентацию";
-            _logs.Write(item);
-            return item;
+            _logger.LogError("Не удалось распрарсить презентацию");
+            return null;
         }
 
         /// <summary>
@@ -158,12 +153,8 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        async Task<ServiceResult<NnmclubItem>> GetItem(NnmclubParseItemInput param)
+        async Task<NnmclubItem> GetItem(NnmclubParseItemInput param)
         {
-            var result = new ServiceResult<NnmclubItem>();
-            result.ServiceName = nameof(NnmclubService);
-            result.Location = "Парсинг презентации";
-
             NnmclubListItem listItem =
                 _context
                 .NnmclubListItems
@@ -201,13 +192,11 @@ namespace AyanaWebApi.Services
 
                     if (description == null || listImgs == null || poster == null)
                     {
-                        result.Comment = "Не удалось получить описание презентации или ее изображений";
-                        result.ErrorContent = $"NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}";
-                        _logs.Write(result);
-                        return result;
+                        _logger.LogError($"Не удалось получить описание презентации или ее изображений. NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}");
+                        return null;
                     }
 
-                    result.ResultObj = new NnmclubItem
+                    var item = new NnmclubItem
                     {
                         Created = DateTime.Now,
                         Name = listItem.Name,
@@ -218,16 +207,13 @@ namespace AyanaWebApi.Services
                         Torrent = torrent,
                         NnmclubListItemId = param.ListItemId,
                     };
-                    return result;
+                    return item;
                 }
-                result.Comment = "Не удалось получить веб страницу с презентацией";
-                result.ErrorContent = result.ErrorContent = $"NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}";
-                _logs.Write(result);
-                return result;
+                _logger.LogError($"Не удалось получить веб страницу с презентацией. NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}");
+                return null;
             }
-            result.Comment = "Не удалось найти в базе презентацию из списка с указнным Id";
-            _logs.Write(result);
-            return result;
+            _logger.LogError("Не удалось найти в базе презентацию из списка с указнным Id");
+            return null;
         }
 
         /// <summary>

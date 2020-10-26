@@ -20,6 +20,6 @@ namespace AyanaWebApi.Services.Interfaces
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        Task<ServiceResult<NnmclubItem>> ParseItem(NnmclubParseItemInput param);
+        Task<NnmclubItem> ParseItem(NnmclubParseItemInput param);
     }
 }
