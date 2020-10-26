@@ -206,7 +206,7 @@ namespace AyanaWebApi.Services
             {
                 manualContent.Add(startKey + i + endKey, post.Imgs[i - 1].ImgUri);
             }
-            //Нужно добавить обработку исключения на случай если строка слишком длинная https://stackoverflow.com/questions/38440631
+            //todo: Нужно добавить обработку исключения на случай если строка слишком длинная https://stackoverflow.com/questions/38440631
             var content = new FormUrlEncodedContent(formContent.Union(manualContent));
 
             var result = await _httpClient.PostAsync(inputParam.AddPostAddress, content);

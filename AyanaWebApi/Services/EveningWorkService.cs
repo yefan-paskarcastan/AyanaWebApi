@@ -181,12 +181,12 @@ namespace AyanaWebApi.Services
             foreach (NnmclubListItem item in lst)
             {
                 //Парсим
-                RutorParseItemInput paramRutorItem =
-                    _context.RutorParseItemInputs
+                NnmclubParseItemInput paramParseInp =
+                    _context.NnmclubParseItemInputs
                     .Single(el => el.Active);
-                paramRutorItem.ListItemId = item.Id;
-                ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
-                if (rutorItem.ResultObj == null)
+                paramParseInp.ListItemId = item.Id;
+                ServiceResult<NnmclubItem> nnmclubItem = await _nnmclubService.ParseItem(paramParseInp);
+                if (nnmclubItem.ResultObj == null)
                 {
                     _logger.LogError("Не удалось распарсить пост. ListItemId = " + item.Id);
                     return false;
@@ -195,12 +195,12 @@ namespace AyanaWebApi.Services
                 //Подготавливаем
                 DriverToSoftInput driverInput =
                     _context.DriverToSoftInputs
-                    .Single(el => el.Active && el.Type == nameof(RutorItem));
-                driverInput.ParseItemId = rutorItem.ResultObj.Id;
+                    .Single(el => el.Active && el.Type == nameof(NnmclubItem));
+                driverInput.ParseItemId = nnmclubItem.ResultObj.Id;
                 SoftPost post = await _driverService.Convert(driverInput);
                 if (post == null)
                 {
-                    _logger.LogError("Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id);
+                    _logger.LogError("Не удалось подготовить пост к публикации. RutorItemId = " + nnmclubItem.ResultObj.Id);
                     return false;
                 }
 
