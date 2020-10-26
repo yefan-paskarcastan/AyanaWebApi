@@ -66,7 +66,7 @@ namespace AyanaWebApi.Services
             ServiceResult<IList<RutorListItem>> rutorListItem = await _rutorService.CheckList(rutorCheckListInput);
             if (rutorListItem.ResultObj == null)
             {
-                _logger.LogError("Ошибка проверки новых презентаций. RutorCheckListInput_Id = " + rutorCheckListInput.Id);
+                _logger.LogError("Ошибка проверки новых презентаций. RutorCheckListInput.Id = " + rutorCheckListInput.Id);
                 return false;
             }
 
@@ -92,7 +92,7 @@ namespace AyanaWebApi.Services
             IList<NnmclubListItem> list = await _nnmclubService.CheckList(inp);
             if (list == null)
             {
-                _logger.LogError("Ошибка проверки новых презентаций. NnmclubCheckListInput_Id = " + inp.Id);
+                _logger.LogError("Ошибка проверки новых презентаций. NnmclubCheckListInput.Id = " + inp.Id);
                 return false;
             }
             bool res = await FlowNnmclub(list);
@@ -158,11 +158,8 @@ namespace AyanaWebApi.Services
                     _context.DictionaryValues
                     .Where(el => el.DictionaryName == softPostInput.AuthDataId)
                     .ToDictionary(k => k.Key, v => v.Value);
-                ServiceResult<SoftResult> result = await _softService.AddPost(softPostInput);
-                if (result.ResultObj.SoftPost == null
-                    || !result.ResultObj.SendPostIsSuccess
-                    || !result.ResultObj.PosterIsSuccess
-                    || !result.ResultObj.TorrentFileIsSuccess)
+                bool result = await _softService.AddPost(softPostInput);
+                if (!result)
                 {
                     _logger.LogError("Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id);
                     return false;
@@ -175,7 +172,7 @@ namespace AyanaWebApi.Services
         /// Проводит операции с полученным списком презентаций по публикации на сайте soft
         /// </summary>
         /// <param name="lst">Список презентаций, которые были получены с nnmclub</param>
-        /// <returns>Если все презентации выложены успешно, то ResultObj != null</returns>
+        /// <returns>Если все презентации выложены успешно, то true, инчае false</returns>
         async Task<bool> FlowNnmclub(IList<NnmclubListItem> lst)
         {
             foreach (NnmclubListItem item in lst)
@@ -188,7 +185,7 @@ namespace AyanaWebApi.Services
                 NnmclubItem nnmclubItem = await _nnmclubService.ParseItem(paramParseInp);
                 if (nnmclubItem == null)
                 {
-                    _logger.LogError("Не удалось распарсить пост. ListItemId = " + item.Id);
+                    _logger.LogError("Не удалось распарсить пост. NnmclubListItem.Id = " + item.Id);
                     return false;
                 }
 
@@ -200,7 +197,7 @@ namespace AyanaWebApi.Services
                 SoftPost post = await _driverService.Convert(driverInput);
                 if (post == null)
                 {
-                    _logger.LogError("Не удалось подготовить пост к публикации. RutorItemId = " + nnmclubItem.Id);
+                    _logger.LogError("Не удалось подготовить пост к публикации. NnmclubItem.Id = " + nnmclubItem.Id);
                     return false;
                 }
 
@@ -225,13 +222,10 @@ namespace AyanaWebApi.Services
                     _context.DictionaryValues
                     .Where(el => el.DictionaryName == softPostInput.AuthDataId)
                     .ToDictionary(k => k.Key, v => v.Value);
-                ServiceResult<SoftResult> result = await _softService.AddPost(softPostInput);
-                if (result.ResultObj.SoftPost == null
-                    || !result.ResultObj.SendPostIsSuccess
-                    || !result.ResultObj.PosterIsSuccess
-                    || !result.ResultObj.TorrentFileIsSuccess)
+                bool result = await _softService.AddPost(softPostInput);
+                if (!result)
                 {
-                    _logger.LogError("Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id);
+                    _logger.LogError("Не удалось выложить пост на сайт. SoftPost.Id = " + post.Id);
                     return false;
                 }
             }

@@ -8,10 +8,10 @@ namespace AyanaWebApi.Services.Interfaces
     public interface ISoftService
     {
         /// <summary>
-        /// Добавляет пост
+        /// Добавляет пост на сайт
         /// </summary>
         /// <param name="inputParam"></param>
-        /// <returns></returns>
-        Task<ServiceResult<SoftResult>> AddPost(SoftPostInput inputParam);
+        /// <returns>Если отработал успешно, то true, инчае false</returns>
+        Task<bool> AddPost(SoftPostInput inputParam);
     }
 }

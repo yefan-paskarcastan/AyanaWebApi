@@ -6,6 +6,8 @@ using System.Net.Http;
 using System.Web;
 using System.Net.Http.Headers;
 using System.IO;
+
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -18,95 +20,72 @@ namespace AyanaWebApi.Services
     public class SoftService : ISoftService
     {
         public SoftService(AyDbContext context,
-                                  IHttpClientFactory clientFactory,
-                                  ILogService logService)
+                           IHttpClientFactory clientFactory,
+                           ILogger<SoftService> logger)
         {
             _context = context;
             _httpClient = clientFactory.CreateClient("torrentSoft");
-            _logService = logService;
+            _logger = logger;
         }
+
+        readonly AyDbContext _context;
+        readonly HttpClient _httpClient;
+        readonly ILogger<SoftService> _logger;
 
         /// <summary>
         /// Добавляет пост на сайт
         /// </summary>
         /// <param name="inputParam"></param>
-        /// <returns></returns>
-        public async Task<ServiceResult<SoftResult>> AddPost(SoftPostInput inputParam)
+        /// <returns>Если отработал успешно, то true, инчае false</returns>
+        public async Task<bool> AddPost(SoftPostInput inputParam)
         {
-            var result = new SoftResult
-            {
-                Created = DateTime.Now,
-                SoftPostId = inputParam.SoftPostId,
-                SoftPost = null,
-                PosterIsSuccess = false,
-                TorrentFileIsSuccess = false,
-                SendPostIsSuccess = false
-            };
-
-            var serviceResult = new ServiceResult<SoftResult>();
-            serviceResult.ServiceName = nameof(SoftService);
-            serviceResult.Location = "Публикация поста";
-            serviceResult.ResultObj = result;
-
             SoftPost post =
                 _context.SoftPosts
-                        .Include(el => el.Imgs)
-                        .SingleOrDefault(el => el.Id == inputParam.SoftPostId);
+                    .Include(el => el.Imgs)
+                    .SingleOrDefault(el => el.Id == inputParam.SoftPostId);
             if (post == null)
             {
-                serviceResult.Comment = "Не удалось найти указанный подготовленный пост в базе";
-                serviceResult.ErrorContent = "TorrentSoftPostId = " + inputParam.SoftPostId;
-                _logService.Write(serviceResult);
-                return serviceResult;
+                _logger.LogError("Не удалось найти указанный подготовленный пост в базе. SoftPost.Id = " + inputParam.SoftPostId);
+                return false;
             }
-            result.SoftPost = post;
 
             string userHash = await Authorize(inputParam);
+
+            //Загружаем файл
             SoftFileUploadResult torrentUploadResult = await UploadFile(inputParam,
                                                                         Path.GetFileName(post.TorrentFile),
                                                                         post.TorrentFile,
                                                                         userHash,
                                                                         inputParam.TorrentUploadQueryString);
-            if (!torrentUploadResult.Success)
+            if (torrentUploadResult == null)
             {
-                serviceResult.Comment = "Не удалось загрузить торрент файл на сайт";
-                serviceResult.ErrorContent = torrentUploadResult.Returnbox;
-                _logService.Write(serviceResult);
-                return serviceResult;
+                _logger.LogError("Не удалось загрузить торрент файл на сайт");
+                return false;
             }
-            result.TorrentFileIsSuccess = true;
 
+            //Загружаем постер
             SoftFileUploadResult imgUploadResult = await UploadFile(inputParam,
                                                                     Path.GetFileName(post.PosterImg),
                                                                     post.PosterImg,
                                                                     userHash,
                                                                     inputParam.PosterUploadQueryString);
-            if (!imgUploadResult.Success)
+            if (imgUploadResult == null)
             {
-                serviceResult.Comment = "Не удалось загрузить постер на сайт";
-                serviceResult.ErrorContent = imgUploadResult.Returnbox;
-                _logService.Write(serviceResult);
-                return serviceResult;
+                _logger.LogError("Не удалось загрузить постер на сайт");
+                return false;
             }
-            result.PosterIsSuccess = true;
             
-            result.SendPostIsSuccess = await SendPost(inputParam, imgUploadResult, userHash, post);
-            if(!result.SendPostIsSuccess)
+            //Выкладываем
+            bool sendPostResult = await SendPost(inputParam, imgUploadResult, userHash, post);
+            if(!sendPostResult)
             {
-                serviceResult.Comment = "Не удалось отправить пост на сайт";
-                serviceResult.ErrorContent = imgUploadResult.Returnbox;
-                _logService.Write(serviceResult);
+                _logger.LogError("Не удалось отправить пост на сайт");
+                return false;
             }
-            return serviceResult;
+            return true;
         }
 
         #region Private
-        readonly AyDbContext _context;
-
-        readonly HttpClient _httpClient;
-
-        readonly ILogService _logService;
-
         /// <summary>
         /// Авторизоваться на сайте
         /// </summary>
@@ -133,12 +112,12 @@ namespace AyanaWebApi.Services
         /// <param name="httpFormFileHeader"></param>
         /// <param name="httpFormFileName"></param>
         /// <param name="fullPathFileOnServer"></param>
-        /// <returns></returns>
+        /// <returns>Возвращает null, если что-то пошло не так</returns>
         async Task<SoftFileUploadResult> UploadFile(SoftPostInput inputParam,
-                                                           string httpFormFileName,
-                                                           string fullPathFileOnServer,
-                                                           string userHash,
-                                                           Dictionary<string, string> queryString)
+                                                    string httpFormFileName,
+                                                    string fullPathFileOnServer,
+                                                    string userHash,
+                                                    Dictionary<string, string> queryString)
         {
             var form = new MultipartFormDataContent();
             HttpContent content = new StringContent(inputParam.AddPostFormFileHeader);
@@ -168,13 +147,10 @@ namespace AyanaWebApi.Services
 
             if (!uploadResult.Success)
             {
-                var serviceResult = new ServiceResult<string>();
-                serviceResult.ServiceName = nameof(SoftService);
-                serviceResult.Location = "Загрузка файла";
-                serviceResult.Comment = "Не удалось загрузить файл на сайт";
-                serviceResult.ErrorContent = "Имя файла на сервере: " + fullPathFileOnServer;
-                serviceResult.ExceptionMessage = contents;
-                _logService.Write(serviceResult);
+                _logger.LogError("Не удалось загрузить файл на сайт. Имя файла на сервере:" + fullPathFileOnServer);
+                _logger.LogError("Returnbox = " + uploadResult.Returnbox);
+                _logger.LogError("UploadResultContent = " + contents);
+                return null;
             }
             return uploadResult;
         }
@@ -184,7 +160,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="inputParam"></param>
         /// <param name="imgUploadResult"></param>
-        /// <returns></returns>
+        /// <returns>Если отработал успешно, то true, инчае false</returns>
         async Task<bool> SendPost(SoftPostInput inputParam,
                                   SoftFileUploadResult imgUploadResult,
                                   string userHash,
@@ -193,8 +169,8 @@ namespace AyanaWebApi.Services
             IEnumerable<KeyValuePair<string, string>> formContent = inputParam.FormData;
             var manualContent = new Dictionary<string, string>
             {
-                {inputParam.AddPostFormNameHeader, post.Name },
-                {inputParam.AddPostFormDescriptionHeader, post.Description + post.Spoilers },
+                {inputParam.AddPostFormNameHeader, post.Name},
+                {inputParam.AddPostFormDescriptionHeader, post.Description + post.Spoilers},
                 {inputParam.AddPostFormPosterHeader, imgUploadResult.Xfvalue},
                 {inputParam.UserHashHttpHeaderName, userHash}
             };

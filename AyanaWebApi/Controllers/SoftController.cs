@@ -10,11 +10,9 @@ using System.Web;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
-using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Controllers
 {
@@ -31,14 +29,10 @@ namespace AyanaWebApi.Controllers
         [HttpPost("AddPost")]
         public async Task<ActionResult<string>> AddPost([FromBody]SoftPostInput inputParam)
         {
-            ServiceResult<SoftResult> result = await _softService.AddPost(inputParam);
-            if (result.ResultObj.SoftPost != null
-                && result.ResultObj.SendPostIsSuccess
-                && result.ResultObj.PosterIsSuccess
-                && result.ResultObj.TorrentFileIsSuccess)
-            {
+            bool result = await _softService.AddPost(inputParam);
+            if (result)
                 return Ok("Пост успешно добавлен");
-            }
+
             return BadRequest("Не удалось добавить пост");
         }
 
