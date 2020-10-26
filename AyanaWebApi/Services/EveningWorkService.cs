@@ -29,9 +29,16 @@ namespace AyanaWebApi.Services
             _logger = logger;
         }
 
+        readonly AyDbContext _context;
+        readonly ILogger<EveningWorkService> _logger;
+        readonly IRutorService _rutorService;
+        readonly INnmclubService _nnmclubService;
+        readonly IDriverService _driverService;
+        readonly ISoftService _softService;
+
         public async Task<bool> Publishing(int dayFromError)
         {
-            bool resultNnmclub = await ManagerNnmclub();
+            bool resultNnmclub = await ManagerNnmclub(dayFromError);
             bool resultRutor = await ManagerRutor(dayFromError);
             return resultRutor && resultNnmclub;
         }
@@ -83,8 +90,24 @@ namespace AyanaWebApi.Services
         /// Запуск пакетного парсинаг Nnmclub
         /// </summary>
         /// <returns></returns>
-        async Task<bool> ManagerNnmclub()
+        async Task<bool> ManagerNnmclub(int dayFromError)
         {
+            IList<NnmclubListItem> errorList =
+                _context
+                .NnmclubListItems
+                .FromSqlInterpolated($"NnmclubListItemsError {DateTime.Now.AddDays(-dayFromError)}")
+                .ToList();
+
+            if (errorList.Count > 0)
+            {
+                bool resTails = await FlowNnmclub(errorList);
+                if (!resTails)
+                {
+                    _logger.LogError("Ошибка пакетной публикации хвостов");
+                    return false;
+                }
+            }
+
             NnmclubCheckListInput inp =
                 _context
                 .NnmclubCheckListInputs
@@ -125,43 +148,11 @@ namespace AyanaWebApi.Services
                     return false;
                 }
 
-                //Подготавливаем
-                DriverToSoftInput driverInput =
-                    _context.DriverToSoftInputs
-                    .Single(el => el.Active && el.Type == nameof(RutorItem));
-                driverInput.ParseItemId = rutorItem.ResultObj.Id;
-                SoftPost post = await _driverService.Convert(driverInput);
-                if (post == null)
-                {
-                    _logger.LogError("Не удалось подготовить пост к публикации. RutorItemId = " + rutorItem.ResultObj.Id);
-                    return false;
-                }
-
                 //Выкладываем
-                SoftPostInput softPostInput =
-                    _context.SoftPostInputs
-                    .Single(el => el.Active);
-                softPostInput.SoftPostId = post.Id;
-                softPostInput.PosterUploadQueryString =
-                    _context.DictionaryValues
-                    .Where(el => el.DictionaryName == softPostInput.PosterUploadQueryStringId)
-                    .ToDictionary(k => k.Key, v => v.Value);
-                softPostInput.TorrentUploadQueryString =
-                    _context.DictionaryValues
-                    .Where(el => el.DictionaryName == softPostInput.TorrentUploadQueryStringId)
-                    .ToDictionary(k => k.Key, v => v.Value);
-                softPostInput.FormData =
-                    _context.DictionaryValues
-                    .Where(el => el.DictionaryName == softPostInput.FormDataId)
-                    .ToDictionary(k => k.Key, v => v.Value);
-                softPostInput.AuthData =
-                    _context.DictionaryValues
-                    .Where(el => el.DictionaryName == softPostInput.AuthDataId)
-                    .ToDictionary(k => k.Key, v => v.Value);
-                bool result = await _softService.AddPost(softPostInput);
+                bool result = await Send(nameof(RutorItem), rutorItem.ResultObj.Id);
                 if (!result)
                 {
-                    _logger.LogError("Не удалось выложить пост на сайт. TorrentSoftPostId = " + post.Id);
+                    _logger.LogError("Ошибка при отправке поста");
                     return false;
                 }
             }
@@ -189,54 +180,65 @@ namespace AyanaWebApi.Services
                     return false;
                 }
 
-                //Подготавливаем
-                DriverToSoftInput driverInput =
-                    _context.DriverToSoftInputs
-                    .Single(el => el.Active && el.Type == nameof(NnmclubItem));
-                driverInput.ParseItemId = nnmclubItem.Id;
-                SoftPost post = await _driverService.Convert(driverInput);
-                if (post == null)
-                {
-                    _logger.LogError("Не удалось подготовить пост к публикации. NnmclubItem.Id = " + nnmclubItem.Id);
-                    return false;
-                }
-
                 //Выкладываем
-                SoftPostInput softPostInput =
-                    _context.SoftPostInputs
-                    .Single(el => el.Active);
-                softPostInput.SoftPostId = post.Id;
-                softPostInput.PosterUploadQueryString =
-                    _context.DictionaryValues
-                    .Where(el => el.DictionaryName == softPostInput.PosterUploadQueryStringId)
-                    .ToDictionary(k => k.Key, v => v.Value);
-                softPostInput.TorrentUploadQueryString =
-                    _context.DictionaryValues
-                    .Where(el => el.DictionaryName == softPostInput.TorrentUploadQueryStringId)
-                    .ToDictionary(k => k.Key, v => v.Value);
-                softPostInput.FormData =
-                    _context.DictionaryValues
-                    .Where(el => el.DictionaryName == softPostInput.FormDataId)
-                    .ToDictionary(k => k.Key, v => v.Value);
-                softPostInput.AuthData =
-                    _context.DictionaryValues
-                    .Where(el => el.DictionaryName == softPostInput.AuthDataId)
-                    .ToDictionary(k => k.Key, v => v.Value);
-                bool result = await _softService.AddPost(softPostInput);
+                bool result = await Send(nameof(NnmclubItem), nnmclubItem.Id);
                 if (!result)
                 {
-                    _logger.LogError("Не удалось выложить пост на сайт. SoftPost.Id = " + post.Id);
+                    _logger.LogError("Ошибка при отправке поста");
                     return false;
                 }
             }
             return true;
         }
 
-        readonly AyDbContext _context;
-        readonly ILogger<EveningWorkService> _logger;
-        readonly IRutorService _rutorService;
-        readonly INnmclubService _nnmclubService;
-        readonly IDriverService _driverService;
-        readonly ISoftService _softService;
+        /// <summary>
+        /// Подготавливаем и выкладываем пост
+        /// </summary>
+        /// <param name="itemType">Тип поста</param>
+        /// <param name="itemId">Id поста</param>
+        /// <returns>Если метод выполнен успешно - true, инчае false</returns>
+        async Task<bool> Send(string itemType, int itemId)
+        {
+            //Подготавливаем
+            DriverToSoftInput driverInput =
+                _context.DriverToSoftInputs
+                .Single(el => el.Active && el.Type == itemType);
+            driverInput.ParseItemId = itemId;
+            SoftPost post = await _driverService.Convert(driverInput);
+            if (post == null)
+            {
+                _logger.LogError($"Не удалось подготовить пост к публикации. {itemType}.Id = " + itemId);
+                return false;
+            }
+
+            //Выкладываем
+            SoftPostInput softPostInput =
+                _context.SoftPostInputs
+                .Single(el => el.Active);
+            softPostInput.SoftPostId = post.Id;
+            softPostInput.PosterUploadQueryString =
+                _context.DictionaryValues
+                .Where(el => el.DictionaryName == softPostInput.PosterUploadQueryStringId)
+                .ToDictionary(k => k.Key, v => v.Value);
+            softPostInput.TorrentUploadQueryString =
+                _context.DictionaryValues
+                .Where(el => el.DictionaryName == softPostInput.TorrentUploadQueryStringId)
+                .ToDictionary(k => k.Key, v => v.Value);
+            softPostInput.FormData =
+                _context.DictionaryValues
+                .Where(el => el.DictionaryName == softPostInput.FormDataId)
+                .ToDictionary(k => k.Key, v => v.Value);
+            softPostInput.AuthData =
+                _context.DictionaryValues
+                .Where(el => el.DictionaryName == softPostInput.AuthDataId)
+                .ToDictionary(k => k.Key, v => v.Value);
+            bool result = await _softService.AddPost(softPostInput);
+            if (!result)
+            {
+                _logger.LogError("Не удалось выложить пост на сайт. SoftPost.Id = " + post.Id);
+                return false;
+            }
+            return true;
+        }
     }
 }
