@@ -14,6 +14,13 @@ namespace AyanaWebApi.Services
 {
     public class EveningWorkService : IEveningWorkService
     {
+        readonly AyDbContext _context;
+        readonly ILogger<EveningWorkService> _logger;
+        readonly IRutorService _rutorService;
+        readonly INnmclubService _nnmclubService;
+        readonly IDriverService _driverService;
+        readonly ISoftService _softService;
+
         public EveningWorkService(AyDbContext ayDbContext,
                                   IRutorService rutorService,
                                   INnmclubService nnmclubService,
@@ -29,18 +36,11 @@ namespace AyanaWebApi.Services
             _logger = logger;
         }
 
-        readonly AyDbContext _context;
-        readonly ILogger<EveningWorkService> _logger;
-        readonly IRutorService _rutorService;
-        readonly INnmclubService _nnmclubService;
-        readonly IDriverService _driverService;
-        readonly ISoftService _softService;
-
         public async Task<bool> Publishing(int dayFromError)
         {
             bool resultNnmclub = await ManagerNnmclub(dayFromError);
-            bool resultRutor = await ManagerRutor(dayFromError);
-            return resultRutor && resultNnmclub;
+            //bool resultRutor = await ManagerRutor(dayFromError);
+            return resultNnmclub;
         }
 
         /// <summary>

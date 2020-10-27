@@ -99,7 +99,6 @@ namespace AyanaWebApi.Services
 
         #region Private
         readonly AyDbContext _context;
-
         readonly JWTSettings _jwtSecret;
 
         /// <summary>

@@ -5,28 +5,34 @@ using System.Net;
 using System.Threading.Tasks;
 using System.IO;
 using System.Drawing;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 using MihaZupan;
 using HtmlAgilityPack;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
-using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services
 {
     public class DriverService : IDriverService
     {
+        readonly AyDbContext _context;
+        readonly ILogger<DriverService> _logger;
+        readonly IImghostService _imghostService;
+        readonly IImgsConverterService _imgsConverter;
+
         public DriverService(AyDbContext ayDbContext,
                              IImghostService imghostService,
                              IImgsConverterService imgsConverterService,
-                             ILogService logService)
+                             ILogger<DriverService> logger)
         {
             _context = ayDbContext;
             _imghostService = imghostService;
             _imgsConverter = imgsConverterService;
-            _logService = logService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -58,11 +64,6 @@ namespace AyanaWebApi.Services
         }
 
         #region Private
-        readonly AyDbContext _context;
-        readonly IImghostService _imghostService;
-        readonly IImgsConverterService _imgsConverter;
-        readonly ILogService _logService;
-
         /// <summary>
         /// Преобразует RutorPost в SoftPost
         /// </summary>
@@ -70,12 +71,6 @@ namespace AyanaWebApi.Services
         /// <returns></returns>
         async Task<SoftPost> RutorToSoft(DriverToSoftInput param)
         {
-            var serviceResult = new ServiceResult<string>
-            {
-                ServiceName = nameof(DriverService),
-                Location = "Преобразование презентации в пост на сайт soft"
-            };
-
             RutorItem rutorItem = _context
                                   .RutorItems
                                   .Include(el => el.RutorListItem)
@@ -96,9 +91,7 @@ namespace AyanaWebApi.Services
                                                         param.ProxyActive);
                 if (torrentFile == null)
                 {
-                    serviceResult.Comment = "Не удалось загрузить торрент файл";
-                    serviceResult.ErrorContent = $"RutorItemId: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}";
-                    _logService.Write(serviceResult);
+                    _logger.LogError($"Не удалось загрузить торрент файл. RutorItem.Id: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}");
                     return null;
                 }
                 post.TorrentFile = torrentFile;
@@ -106,9 +99,7 @@ namespace AyanaWebApi.Services
                 string posterFile = await GetPosterImgRutor(rutorItem.Imgs, param);
                 if (posterFile == null)
                 {
-                    serviceResult.Comment = "Не удалось загрузить постер";
-                    serviceResult.ErrorContent = $"RutorItemId: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}";
-                    _logService.Write(serviceResult);
+                    _logger.LogError($"Не удалось загрузить постер. RutorItem.Id: {param.ParseItemId}; Href: {rutorItem.RutorListItem.HrefNumber}");
                     return null;
                 }
                 FileInfo img = new FileInfo(posterFile);
@@ -146,9 +137,7 @@ namespace AyanaWebApi.Services
 
                 return post;
             }
-            serviceResult.Comment = "В базе не найдена раздача с указанным Id";
-            serviceResult.ErrorContent = $"RutorItemId: {param.ParseItemId}";
-            _logService.Write(serviceResult);
+            _logger.LogError($"В базе не найдена раздача с указанным Id. RutorItem.Id: {param.ParseItemId}");
             return null;
         }
 
@@ -158,12 +147,6 @@ namespace AyanaWebApi.Services
         /// <returns></returns>
         async Task<SoftPost> NnmclubToSoft(DriverToSoftInput param)
         {
-            var serviceResult = new ServiceResult<string>
-            {
-                ServiceName = nameof(DriverService),
-                Location = "Преобразование презентации в пост на сайт soft"
-            };
-
             NnmclubItem clubItem = _context
                                   .NnmclubItems
                                   .Include(el => el.NnmclubListItem)
@@ -179,9 +162,7 @@ namespace AyanaWebApi.Services
                                                            param.ProxyActive);
                 if (posterFullName == null)
                 {
-                    serviceResult.Comment = "Не удалось загрузить постер";
-                    serviceResult.ErrorContent = $"NnmclubItemId: {param.ParseItemId}; Href: {clubItem.NnmclubListItem.Href}";
-                    _logService.Write(serviceResult);
+                    _logger.LogError($"Не удалось загрузить постер. NnmclubItem.Id: {param.ParseItemId}; Href: {clubItem.NnmclubListItem.Href}");
                     return null;
                 }
 
@@ -194,9 +175,7 @@ namespace AyanaWebApi.Services
                                                             param.AuthParam);
                 if (torrentFullName == null)
                 {
-                    serviceResult.Comment = "Не удалось загрузить торрент файл";
-                    serviceResult.ErrorContent = $"NnmclubItemId: {param.ParseItemId}; Href: {clubItem.NnmclubListItem.Href}";
-                    _logService.Write(serviceResult);
+                    _logger.LogError($"Не удалось загрузить торрент файл. NnmclubItem.Id: {param.ParseItemId}; Href: {clubItem.NnmclubListItem.Href}");
                     return null;
                 }
 
@@ -217,9 +196,7 @@ namespace AyanaWebApi.Services
                 };
                 return post;
             }
-            serviceResult.Comment = "В базе не найдена презентация с указанным Id";
-            serviceResult.ErrorContent = $"NnmclubItemId: {param.ParseItemId}";
-            _logService.Write(serviceResult);
+            _logger.LogError($"В базе не найдена презентация с указанным Id. NnmclubItem.Id: {param.ParseItemId}");
             return null;
         }
 
@@ -242,12 +219,6 @@ namespace AyanaWebApi.Services
                                         Uri authPage = null,
                                         string authParam = "")
         {
-            var serviceResult = new ServiceResult<string>
-            {
-                ServiceName = nameof(DriverService),
-                Location = "Загрузка файла"
-            };
-
             var webClient = new WebClient();
             if(proxyUsing)
                 webClient.Proxy = new HttpToSocks5Proxy(proxyAddress, proxyPort);
@@ -270,10 +241,7 @@ namespace AyanaWebApi.Services
             }
             catch (WebException ex)
             {
-                serviceResult.Comment = "Указан неврный адрес или произошла другая сетевая ошибка";
-                serviceResult.ErrorContent = "Uri: " + uri;
-                serviceResult.ExceptionMessage = ex.Message;
-                _logService.Write(serviceResult);
+                _logger.LogError(ex, "Указан неврный адрес или произошла другая сетевая ошибка. Uri: " + uri);
                 return null;
             }
             return fullName;
@@ -298,12 +266,6 @@ namespace AyanaWebApi.Services
         async Task<string> GetPosterImgRutor(List<RutorItemImg> listImg, 
                                              DriverToSoftInput param)
         {
-            var serviceResult = new ServiceResult<string>
-            {
-                ServiceName = nameof(DriverService),
-                Location = "Выбор постера"
-            };
-
             IList<RutorItemImg> withoutLink =
                 (from img in listImg
                  where img.ParentUrl == null && img.ChildUrl != null
@@ -321,9 +283,7 @@ namespace AyanaWebApi.Services
                                                                 param.ProxyActive);
                     if (fullFileNameOne == null)
                     {
-                        serviceResult.Comment = "При загрузке постера произошла ошибка";
-                        serviceResult.ErrorContent = "ChildImg uri: " + img.ChildUrl;
-                        _logService.Write(serviceResult);
+                        _logger.LogError("При загрузке постера произошла ошибка. ChildImg uri: " + img.ChildUrl);
                         return null;
                     }
                     return fullFileNameOne;
@@ -341,10 +301,7 @@ namespace AyanaWebApi.Services
                     }
                     catch (WebException ex)
                     {
-                        serviceResult.Comment = "При загрузке файла постера по списку произошла ошибка";
-                        serviceResult.ErrorContent = "ChildImg uri: " + item.ChildUrl;
-                        serviceResult.ExceptionMessage = ex.Message;
-                        _logService.Write(serviceResult);
+                        _logger.LogError(ex, "При загрузке файла постера по списку произошла ошибка. ChildImg uri: " + item.ChildUrl);
                         return null;
                     }
                     var img = new Bitmap(stream);
@@ -362,15 +319,12 @@ namespace AyanaWebApi.Services
                                                          param.ProxyActive);
                 if (fullFileName == null)
                 {
-                    serviceResult.Comment = "При загрузке постера произошла ошибка";
-                    serviceResult.ErrorContent = "Poster uri: " + posterUri;
-                    _logService.Write(serviceResult);
+                    _logger.LogError("При загрузке постера произошла ошибка. Poster uri: " + posterUri);
                     return null;
                 }
                 return fullFileName;
             }
-            serviceResult.Comment = "Не удалось выбрать подходящий постер или изображения отсутсвуют";
-            _logService.Write(serviceResult);
+            _logger.LogError("Не удалось выбрать подходящий постер или изображения отсутсвуют");
             return null;
         }
 

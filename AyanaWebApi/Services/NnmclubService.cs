@@ -23,13 +23,14 @@ namespace AyanaWebApi.Services
     /// </summary>
     public class NnmclubService : INnmclubService
     {
+        readonly AyDbContext _context;
+        readonly ILogger<NnmclubService> _logger;
+
         public NnmclubService(AyDbContext ayDbContext,
-                              ILogger<NnmclubService> logger,
-                              ILogService logService)
+                              ILogger<NnmclubService> logger)
         {
             _context = ayDbContext;
             _logger = logger;
-            _logs = logService;
         }
 
         /// <summary>
@@ -86,10 +87,6 @@ namespace AyanaWebApi.Services
         }
 
         #region Private
-        readonly AyDbContext _context;
-        readonly ILogService _logs;
-        readonly ILogger<NnmclubService> _logger;
-
         /// <summary>
         /// Получает последние презентации клуба
         /// </summary>
@@ -229,13 +226,7 @@ namespace AyanaWebApi.Services
 
             if (nodeSpoilers == null)
             {
-                var srResult = new ServiceResult<string>
-                {
-                    ServiceName = nameof(NnmclubService),
-                    Location = "Парсинг презентации / Парсинг спойлеров",
-                    Comment = "Не удалось найти спойлеры на странице с презентацией"
-                };
-                _logs.Write(srResult);
+                _logger.LogError("Не удалось найти спойлеры на странице с презентацией");
                 return null;
             }
 
@@ -309,13 +300,7 @@ namespace AyanaWebApi.Services
                 return imgsList;
             }
 
-            var srResult = new ServiceResult<string>
-            {
-                ServiceName = nameof(NnmclubService),
-                Location = "Парсинг презентации / Получение списка скриншотов",
-                Comment = "Не удалось найти ни одного скриншота на странице презентации"
-            };
-            _logs.Write(srResult);
+            _logger.LogError("Не удалось найти ни одного скриншота на странице презентации");
             return null;
         }
 
@@ -342,13 +327,7 @@ namespace AyanaWebApi.Services
 
             if (nodeDescription == null)
             {
-                var srResult = new ServiceResult<string>
-                {
-                    ServiceName = nameof(NnmclubService),
-                    Location = "Парсинг описания презентации",
-                    Comment = "Не удалось найти описание презентации по указанному XPath выражению"
-                };
-                _logs.Write(srResult);
+                _logger.LogError("Не удалось найти описание презентации по указанному XPath выражению");
                 return null;
             }
 
