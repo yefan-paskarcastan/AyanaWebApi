@@ -37,7 +37,7 @@ namespace AyanaWebApi.Services
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns>Если отработал успешно, то true, инчае false</returns>
-        public async Task<bool> AddPost(SoftPostInput inputParam)
+        public async Task<PublishResult> AddPost(SoftPostInput inputParam)
         {
             SoftPost post =
                 _context.SoftPosts
@@ -46,33 +46,38 @@ namespace AyanaWebApi.Services
             if (post == null)
             {
                 _logger.LogError("Не удалось найти указанный подготовленный пост в базе. SoftPost.Id = " + inputParam.SoftPostId);
-                return false;
+                return PublishResult.Error;
             }
 
             string userHash = await Authorize(inputParam);
 
             //Загружаем файл
-            SoftFileUploadResult torrentUploadResult = await UploadFile(inputParam,
-                                                                        Path.GetFileName(post.TorrentFile),
-                                                                        post.TorrentFile,
-                                                                        userHash,
-                                                                        inputParam.TorrentUploadQueryString);
-            if (torrentUploadResult == null)
+            PublishResult torrentUploadResult = await UploadFile(inputParam,
+                                                                 Path.GetFileName(post.TorrentFile),
+                                                                 post.TorrentFile,
+                                                                 userHash,
+                                                                 inputParam.TorrentUploadQueryString);
+            if (torrentUploadResult == PublishResult.Error)
             {
                 _logger.LogError("Не удалось загрузить торрент файл на сайт");
-                return false;
+                return PublishResult.Error;
+            }
+            if (torrentUploadResult == PublishResult.FileExist)
+            {
+                _logger.LogError("Такой торрент файл уже загружен");
+                return PublishResult.FileExist;
             }
 
             //Загружаем постер
-            SoftFileUploadResult imgUploadResult = await UploadFile(inputParam,
-                                                                    Path.GetFileName(post.PosterImg),
-                                                                    post.PosterImg,
-                                                                    userHash,
-                                                                    inputParam.PosterUploadQueryString);
+            SoftFileUploadResult imgUploadResult = await UploadPoster(inputParam,
+                                                                      Path.GetFileName(post.PosterImg),
+                                                                      post.PosterImg,
+                                                                      userHash,
+                                                                      inputParam.PosterUploadQueryString);
             if (imgUploadResult == null)
             {
                 _logger.LogError("Не удалось загрузить постер на сайт");
-                return false;
+                return PublishResult.Error;
             }
             
             //Выкладываем
@@ -80,9 +85,9 @@ namespace AyanaWebApi.Services
             if(!sendPostResult)
             {
                 _logger.LogError("Не удалось отправить пост на сайт");
-                return false;
+                return PublishResult.Error;
             }
-            return true;
+            return PublishResult.Success;
         }
 
         #region Private
@@ -113,11 +118,11 @@ namespace AyanaWebApi.Services
         /// <param name="httpFormFileName"></param>
         /// <param name="fullPathFileOnServer"></param>
         /// <returns>Возвращает null, если что-то пошло не так</returns>
-        async Task<SoftFileUploadResult> UploadFile(SoftPostInput inputParam,
-                                                    string httpFormFileName,
-                                                    string fullPathFileOnServer,
-                                                    string userHash,
-                                                    Dictionary<string, string> queryString)
+        async Task<PublishResult> UploadFile(SoftPostInput inputParam,
+                                             string httpFormFileName,
+                                             string fullPathFileOnServer,
+                                             string userHash,
+                                             Dictionary<string, string> queryString)
         {
             var form = new MultipartFormDataContent();
             HttpContent content = new StringContent(inputParam.AddPostFormFileHeader);
@@ -142,7 +147,62 @@ namespace AyanaWebApi.Services
             string fullAddrUploadFile = inputParam.UploadFileAddress + query.ToString();
             var result = await _httpClient.PostAsync(fullAddrUploadFile, form);
 
-            var contents = await result.Content.ReadAsStringAsync();
+            string contents = await result.Content.ReadAsStringAsync();
+            SoftFileUploadResult uploadResult = JsonConvert.DeserializeObject<SoftFileUploadResult>(contents);
+
+            if (!uploadResult.Success)
+            {
+                if (contents.Contains("\"error\":\"Такой файл уже загружен на сайт!"))
+                {
+                    _logger.LogError("Такой файл уже загружен на сайт!");
+                    return PublishResult.FileExist;
+                }
+                _logger.LogError("Не удалось загрузить файл на сайт. Имя файла на сервере:" + fullPathFileOnServer);
+                _logger.LogError("Returnbox = " + uploadResult.Returnbox);
+                _logger.LogError("UploadResultContent = " + contents);
+                return PublishResult.Error;
+            }
+            return PublishResult.Success;
+        }
+
+        /// <summary>
+        /// Загрузить постер на cайт
+        /// </summary>
+        /// <param name="inputParam"></param>
+        /// <param name="httpFormFileHeader"></param>
+        /// <param name="httpFormFileName"></param>
+        /// <param name="fullPathFileOnServer"></param>
+        /// <returns>Возвращает null, если что-то пошло не так</returns>
+        async Task<SoftFileUploadResult> UploadPoster(SoftPostInput inputParam,
+                                                      string httpFormFileName,
+                                                      string fullPathFileOnServer,
+                                                      string userHash,
+                                                      Dictionary<string, string> queryString)
+        {
+            var form = new MultipartFormDataContent();
+            HttpContent content = new StringContent(inputParam.AddPostFormFileHeader);
+            form.Add(content, inputParam.AddPostFormFileHeader);
+
+            content = new StreamContent(File.OpenRead(fullPathFileOnServer));
+            content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+            {
+                Name = inputParam.AddPostFormFileHeader,
+                FileName = httpFormFileName,
+            };
+            form.Add(content);
+
+            var query = HttpUtility.ParseQueryString("");
+            foreach (var item in queryString)
+            {
+                query[item.Key] = item.Value;
+            }
+            query[inputParam.AddPostFormFileHeader] = httpFormFileName;
+            query[inputParam.UserHashHttpHeaderName] = userHash;
+
+            string fullAddrUploadFile = inputParam.UploadFileAddress + query.ToString();
+            var result = await _httpClient.PostAsync(fullAddrUploadFile, form);
+
+            string contents = await result.Content.ReadAsStringAsync();
             SoftFileUploadResult uploadResult = JsonConvert.DeserializeObject<SoftFileUploadResult>(contents);
 
             if (!uploadResult.Success)

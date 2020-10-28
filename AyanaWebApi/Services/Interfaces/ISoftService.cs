@@ -12,6 +12,6 @@ namespace AyanaWebApi.Services.Interfaces
         /// </summary>
         /// <param name="inputParam"></param>
         /// <returns>Если отработал успешно, то true, инчае false</returns>
-        Task<bool> AddPost(SoftPostInput inputParam);
+        Task<PublishResult> AddPost(SoftPostInput inputParam);
     }
 }

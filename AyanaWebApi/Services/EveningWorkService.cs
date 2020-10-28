@@ -39,8 +39,8 @@ namespace AyanaWebApi.Services
         public async Task<bool> Publishing(int dayFromError)
         {
             bool resultNnmclub = await ManagerNnmclub(dayFromError);
-            //bool resultRutor = await ManagerRutor(dayFromError);
-            return resultNnmclub;
+            bool resultRutor = await ManagerRutor(dayFromError);
+            return resultRutor && resultNnmclub;
         }
 
         /// <summary>
@@ -149,11 +149,16 @@ namespace AyanaWebApi.Services
                 }
 
                 //Выкладываем
-                bool result = await Send(nameof(RutorItem), rutorItem.ResultObj.Id);
-                if (!result)
+                PublishResult result = await Send(nameof(RutorItem), rutorItem.ResultObj.Id);
+                if (result == PublishResult.Error)
                 {
                     _logger.LogError("Ошибка при отправке поста");
                     return false;
+                }
+                if (result == PublishResult.FileExist)
+                {
+                    _logger.LogError("Пост уже существует, переходим к следующему");
+                    continue;
                 }
             }
             return true;
@@ -181,11 +186,16 @@ namespace AyanaWebApi.Services
                 }
 
                 //Выкладываем
-                bool result = await Send(nameof(NnmclubItem), nnmclubItem.Id);
-                if (!result)
+                PublishResult result = await Send(nameof(NnmclubItem), nnmclubItem.Id);
+                if (result == PublishResult.Error)
                 {
                     _logger.LogError("Ошибка при отправке поста");
                     return false;
+                }
+                if (result == PublishResult.FileExist)
+                {
+                    _logger.LogError("Пост уже существует, переходим к следующему");
+                    continue;
                 }
             }
             return true;
@@ -197,7 +207,7 @@ namespace AyanaWebApi.Services
         /// <param name="itemType">Тип поста</param>
         /// <param name="itemId">Id поста</param>
         /// <returns>Если метод выполнен успешно - true, инчае false</returns>
-        async Task<bool> Send(string itemType, int itemId)
+        async Task<PublishResult> Send(string itemType, int itemId)
         {
             //Подготавливаем
             DriverToSoftInput driverInput =
@@ -208,7 +218,7 @@ namespace AyanaWebApi.Services
             if (post == null)
             {
                 _logger.LogError($"Не удалось подготовить пост к публикации. {itemType}.Id = " + itemId);
-                return false;
+                return PublishResult.Error;
             }
 
             //Выкладываем
@@ -232,13 +242,18 @@ namespace AyanaWebApi.Services
                 _context.DictionaryValues
                 .Where(el => el.DictionaryName == softPostInput.AuthDataId)
                 .ToDictionary(k => k.Key, v => v.Value);
-            bool result = await _softService.AddPost(softPostInput);
-            if (!result)
+            PublishResult result = await _softService.AddPost(softPostInput);
+            if (result == PublishResult.Error)
             {
                 _logger.LogError("Не удалось выложить пост на сайт. SoftPost.Id = " + post.Id);
-                return false;
+                return PublishResult.Error;
             }
-            return true;
+            if (result == PublishResult.FileExist)
+            {
+                _logger.LogError("Не удалось выложить пост на сайт. Такой файл уже загружен.");
+                return PublishResult.FileExist;
+            }
+            return PublishResult.Success;
         }
     }
 }
