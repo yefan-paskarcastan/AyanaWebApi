@@ -70,14 +70,14 @@ namespace AyanaWebApi.Services
                 _context
                 .RutorCheckListInputs
                 .Single(el => el.Active);
-            ServiceResult<IList<RutorListItem>> rutorListItem = await _rutorService.CheckList(rutorCheckListInput);
-            if (rutorListItem.ResultObj == null)
+            IList<RutorListItem> rutorListItem = await _rutorService.CheckList(rutorCheckListInput);
+            if (rutorListItem == null)
             {
                 _logger.LogError("Ошибка проверки новых презентаций. RutorCheckListInput.Id = " + rutorCheckListInput.Id);
                 return false;
             }
 
-            bool res = await FlowRutor(rutorListItem.ResultObj);
+            bool res = await FlowRutor(rutorListItem);
             if (!res)
             {
                 _logger.LogError("Ошибка пакетной публикации рогов");
@@ -141,15 +141,15 @@ namespace AyanaWebApi.Services
                     _context.RutorParseItemInputs
                     .Single(el => el.Active);
                 paramRutorItem.ListItemId = item.Id;
-                ServiceResult<RutorItem> rutorItem = await _rutorService.ParseItem(paramRutorItem);
-                if (rutorItem.ResultObj == null)
+                RutorItem rutorItem = await _rutorService.ParseItem(paramRutorItem);
+                if (rutorItem == null)
                 {
                     _logger.LogError("Не удалось распарсить пост. ListItemId = " + item.Id);
                     return false;
                 }
 
                 //Выкладываем
-                PublishResult result = await Send(nameof(RutorItem), rutorItem.ResultObj.Id);
+                PublishResult result = await Send(nameof(RutorItem), rutorItem.Id);
                 if (result == PublishResult.Error)
                 {
                     _logger.LogError("Ошибка при отправке поста");

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 
 using AyanaWebApi.Models;
-using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Services.Interfaces
 {
@@ -13,13 +12,13 @@ namespace AyanaWebApi.Services.Interfaces
         /// </summary>
         /// <param name="rutorCheckList">Ссылка на список рутора</param>
         /// <returns></returns>
-        Task<ServiceResult<IList<RutorListItem>>> CheckList(RutorCheckListInput rutorCheckList);
+        Task<IList<RutorListItem>> CheckList(RutorCheckListInput rutorCheckList);
 
         /// <summary>
         /// Парсит указанную раздачу и записывает ее в базу
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        Task<ServiceResult<RutorItem>> ParseItem(RutorParseItemInput param);
+        Task<RutorItem> ParseItem(RutorParseItemInput param);
     }
 }

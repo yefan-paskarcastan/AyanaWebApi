@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
-using AyanaWebApi.Utils;
 
 namespace AyanaWebApi.Controllers
 {
@@ -25,19 +24,19 @@ namespace AyanaWebApi.Controllers
         [HttpPost("ParseItem")]
         public async Task<ActionResult<RutorItem>> ParseItem([FromBody]RutorParseItemInput parseParam)
         {
-            ServiceResult<RutorItem> item = await _rutorService.ParseItem(parseParam);
-            if (item.ResultObj != null)
+            RutorItem item = await _rutorService.ParseItem(parseParam);
+            if (item != null)
             {
 
-                foreach (var img in item.ResultObj.Imgs)
+                foreach (var img in item.Imgs)
                 {
                     img.RutorItem = null;
                 }
-                foreach (var spl in item.ResultObj.Spoilers)
+                foreach (var spl in item.Spoilers)
                 {
                     spl.RutorItem = null;
                 }
-                item.ResultObj.RutorListItem = null;
+                item.RutorListItem = null;
                 return Ok(item);
             }
             return BadRequest("Не удалось распарсить");
@@ -46,11 +45,11 @@ namespace AyanaWebApi.Controllers
         [HttpPost("CheckList")]
         public async Task<ActionResult<IList<RutorListItem>>> CheckList([FromBody]RutorCheckListInput rutorCheckList)
         {
-            ServiceResult<IList<RutorListItem>> result = await _rutorService.CheckList(rutorCheckList);
+            IList<RutorListItem> result = await _rutorService.CheckList(rutorCheckList);
 
-            if (result.ResultObj != null)
+            if (result != null)
             {
-                return Ok(result.ResultObj);
+                return Ok(result);
             }
             return BadRequest("При проверке списка раздач произошла ошибка");
         }
