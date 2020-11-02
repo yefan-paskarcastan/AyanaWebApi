@@ -43,11 +43,18 @@ namespace AyanaWebApi.Services
             NnmclubItem item = await GetItem(param);
             if (item != null)
             {
+                NnmclubItem oldActual =
+                    (from el in _context.NnmclubItems
+                     where el.Actual && el.GroupHref == item.GroupHref
+                     select el).SingleOrDefault();
+
+                if (oldActual != null)
+                    oldActual.Actual = false;
+
                 _context.NnmclubItems.Add(item);
                 _context.SaveChanges();
                 return item;
             }
-            _logger.LogError("Не удалось распрарсить презентацию");
             return null;
         }
 
@@ -139,7 +146,6 @@ namespace AyanaWebApi.Services
                     _logger.LogError("XPath выражение вернуло null");
                     return null;
                 }
-                _logger.LogError("При получении веб страницы вернулось null");
                 return null;
             }
             return result;
@@ -189,7 +195,7 @@ namespace AyanaWebApi.Services
 
                     if (description == null || listImgs == null || poster == null)
                     {
-                        _logger.LogError($"Не удалось получить описание презентации или ее изображений. NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}");
+                        _logger.LogError($"Не удалось получить описание презентации или ее изображений. NnmclubListItem.Id - {listItem.Id} / Href - {listItem.Href}");
                         return null;
                     }
 
@@ -203,10 +209,12 @@ namespace AyanaWebApi.Services
                         Imgs = listImgs,
                         Torrent = torrent,
                         NnmclubListItemId = param.ListItemId,
+                        Actual = true,
+                        GroupHref = listItem.Href
                     };
                     return item;
                 }
-                _logger.LogError($"Не удалось получить веб страницу с презентацией. NnmclubListItemId - {listItem.Id} / Href - {listItem.Href}");
+                _logger.LogError($"Не удалось получить веб страницу с презентацией. NnmclubListItem.Id - {listItem.Id} / Href - {listItem.Href}");
                 return null;
             }
             _logger.LogError("Не удалось найти в базе презентацию из списка с указнным Id");
@@ -283,7 +291,7 @@ namespace AyanaWebApi.Services
         /// <param name="xPathImgs">XPath выражение для поиска изображений</param>
         /// <returns></returns>
         List<NnmclubItemImg> GetImgs(HtmlDocument doc,
-                             string xPathImgs)
+                                     string xPathImgs)
         {
             HtmlNodeCollection nodeImgs =
                 doc.DocumentNode.SelectNodes(xPathImgs);
@@ -389,7 +397,7 @@ namespace AyanaWebApi.Services
                 data = Encoding.Convert(win1251, utf8, data);
                 return utf8.GetString(data);
             }
-            _logger.LogError("После загрузки вернулось null");
+            _logger.LogError("После загрузки веб-страницы вернулось null");
             return null;
         }
         #endregion

@@ -10,6 +10,16 @@ namespace AyanaWebApi.Models
         public DateTime Created { get; set; }
 
         /// <summary>
+        /// Флаг, указывающий, что презентация является самой последней в раздаче на текущий момент
+        /// </summary>
+        public bool Actual { get; set; }
+
+        /// <summary>
+        /// Ссылка на раздачу
+        /// </summary>
+        public string GroupHref { get; set; }
+
+        /// <summary>
         /// Заголовок презентации
         /// </summary>
         public string Name { get; set; }

@@ -16,6 +16,8 @@ namespace AyanaWebApi.Controllers
     [Route("[controller]")]
     public class EveningWorkController : ControllerBase
     {
+        readonly IEveningWorkService _evServices;
+
         public EveningWorkController(IEveningWorkService evService)
         {
             _evServices = evService;
@@ -31,7 +33,5 @@ namespace AyanaWebApi.Controllers
             }
             return "Презентации успешно добавлены";
         }
-
-        readonly IEveningWorkService _evServices;
     }
 }

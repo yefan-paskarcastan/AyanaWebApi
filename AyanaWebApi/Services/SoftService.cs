@@ -19,6 +19,10 @@ namespace AyanaWebApi.Services
 {
     public class SoftService : ISoftService
     {
+        readonly AyDbContext _context;
+        readonly HttpClient _httpClient;
+        readonly ILogger<SoftService> _logger;
+
         public SoftService(AyDbContext context,
                            IHttpClientFactory clientFactory,
                            ILogger<SoftService> logger)
@@ -27,10 +31,6 @@ namespace AyanaWebApi.Services
             _httpClient = clientFactory.CreateClient("torrentSoft");
             _logger = logger;
         }
-
-        readonly AyDbContext _context;
-        readonly HttpClient _httpClient;
-        readonly ILogger<SoftService> _logger;
 
         /// <summary>
         /// Добавляет пост на сайт
