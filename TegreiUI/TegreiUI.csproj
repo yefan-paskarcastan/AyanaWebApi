@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="..\AyanaWebApi\DTO\ListItem.cs" Link="DTO\ListItem.cs" />
+    <Compile Include="..\AyanaWebApi\DTO\Pagination.cs" Link="DTO\Pagination.cs" />
   </ItemGroup>
 
   <ItemGroup>

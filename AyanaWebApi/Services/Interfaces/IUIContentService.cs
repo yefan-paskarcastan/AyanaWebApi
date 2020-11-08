@@ -11,6 +11,10 @@ namespace AyanaWebApi.Services.Interfaces
     {
         bool Prepare();
 
-        IList<ListItem> GetProgramsList();
+        /// <summary>
+        /// Возвращает список программ для отображения
+        /// </summary>
+        /// <returns></returns>
+        IList<ListItem> GetProgramsList(Pagination pagination);
     }
 }

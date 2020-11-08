@@ -72,7 +72,7 @@ namespace AyanaWebApi.Services
         /// Возвращает список программ для отображения
         /// </summary>
         /// <returns></returns>
-        public IList<ListItem> GetProgramsList()
+        public IList<ListItem> GetProgramsList(Pagination pagination)
         {
             var query =
                 from el in _context.NnmclubItems
@@ -83,7 +83,10 @@ namespace AyanaWebApi.Services
                     Created = el.Created,
                     Name = el.Name
                 };
-            return query.ToList();
+            IList<ListItem> lst = query
+                .Page(pagination.CurrentPage, pagination.CountItem)
+                .ToList();
+            return lst;
         }
     }
 }

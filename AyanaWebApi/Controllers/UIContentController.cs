@@ -31,10 +31,16 @@ namespace AyanaWebApi.Controllers
             return Ok("Выполнено успешно!");
         }
 
-        [HttpPost("GetProgramsList")]
-        public ActionResult<IList<ListItem>> GetProgramsList()
+        [HttpPost("GetPrograms")]
+        public ActionResult<IList<ListItem>> GetPrograms(Pagination pagination)
         {
-            return Ok(_contentService.GetProgramsList());
+            if (pagination.CountItem < 1 || pagination.CurrentPage < 1)
+            {
+                pagination.CurrentPage = 1;
+                pagination.CountItem = 50;
+            }
+            IList<ListItem> lst = _contentService.GetProgramsList(pagination);
+            return Ok(lst);
         }
     }
 }
