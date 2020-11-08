@@ -12,6 +12,7 @@ using BencodeNET.Parsing;
 using BencodeNET.Torrents;
 
 using AyanaWebApi.Utils;
+using AyanaWebApi.DTO;
 using AyanaWebApi.Models;
 using AyanaWebApi.Services.Interfaces;
 
@@ -68,216 +69,21 @@ namespace AyanaWebApi.Services
         }
 
         /// <summary>
-        /// Запуск пакетного парсинга Rutor
-        /// </summary>
-        /// <param name="dayFromError"></param>
-        /// <returns></returns>
-        async Task<bool> ManagerRutor(int dayFromError)
-        {
-            IList<RutorListItem> errorList =
-                _context
-                .RutorListItems
-                .FromSqlInterpolated($"RutorListItemsError {DateTime.Now.AddDays(-dayFromError)}")
-                .ToList();
-
-            if (errorList.Count > 0)
-            {
-                bool resTails = await FlowRutor(errorList);
-                if (!resTails)
-                {
-                    _logger.LogError("Ошибка пакетной публикации хвостов");
-                    return false;
-                }
-            }
-
-            RutorCheckListInput rutorCheckListInput =
-                _context
-                .RutorCheckListInputs
-                .Single(el => el.Active);
-            IList<RutorListItem> rutorListItem = await _rutorService.CheckList(rutorCheckListInput);
-            if (rutorListItem == null)
-            {
-                _logger.LogError("Ошибка проверки новых презентаций. RutorCheckListInput.Id = " + rutorCheckListInput.Id);
-                return false;
-            }
-
-            bool res = await FlowRutor(rutorListItem);
-            if (!res)
-            {
-                _logger.LogError("Ошибка пакетной публикации рогов");
-                return false;
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Запуск пакетного парсинаг Nnmclub
+        /// Возвращает список программ для отображения
         /// </summary>
         /// <returns></returns>
-        async Task<bool> ManagerNnmclub(int dayFromError)
+        public IList<ListItem> GetProgramsList()
         {
-            IList<NnmclubListItem> errorList =
-                _context
-                .NnmclubListItems
-                .FromSqlInterpolated($"NnmclubListItemsError {DateTime.Now.AddDays(-dayFromError)}")
-                .ToList();
-
-            if (errorList.Count > 0)
-            {
-                bool resTails = await FlowNnmclub(errorList);
-                if (!resTails)
+            var query =
+                from el in _context.NnmclubItems
+                where el.Actual == true
+                orderby el.Created descending
+                select new ListItem
                 {
-                    _logger.LogError("Ошибка пакетной публикации хвостов");
-                    return false;
-                }
-            }
-
-            NnmclubCheckListInput inp =
-                _context
-                .NnmclubCheckListInputs
-                .Single(el => el.Active);
-            IList<NnmclubListItem> list = await _nnmclubService.CheckList(inp);
-            if (list == null)
-            {
-                _logger.LogError("Ошибка проверки новых презентаций. NnmclubCheckListInput.Id = " + inp.Id);
-                return false;
-            }
-            bool res = await FlowNnmclub(list);
-            if (!res)
-            {
-                _logger.LogError("Ошибка пакетной публикации рогов");
-                return false;
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Проводит операции с полученным списком презентаций по публикации на сайте soft
-        /// </summary>
-        /// <param name="lst">Список презентаций, которые были получены с rutor</param>
-        /// <returns>Если операция выполнена успешно - true, инчае false</returns>
-        async Task<bool> FlowRutor(IList<RutorListItem> lst)
-        {
-            foreach (RutorListItem item in lst)
-            {
-                //Парсим
-                RutorParseItemInput paramRutorItem =
-                    _context.RutorParseItemInputs
-                    .Single(el => el.Active);
-                paramRutorItem.ListItemId = item.Id;
-                RutorItem rutorItem = await _rutorService.ParseItem(paramRutorItem);
-                if (rutorItem == null)
-                {
-                    _logger.LogError("Не удалось распарсить пост. ListItemId = " + item.Id);
-                    return false;
-                }
-
-                //Выкладываем
-                PublishResult result = await Send(nameof(RutorItem), rutorItem.Id);
-                if (result == PublishResult.Error)
-                {
-                    _logger.LogError("Ошибка при отправке поста");
-                    return false;
-                }
-                if (result == PublishResult.FileExist)
-                {
-                    _logger.LogError("Пост уже существует, переходим к следующему");
-                    continue;
-                }
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Проводит операции с полученным списком презентаций по публикации на сайте soft
-        /// </summary>
-        /// <param name="lst">Список презентаций, которые были получены с nnmclub</param>
-        /// <returns>Если все презентации выложены успешно, то true, инчае false</returns>
-        async Task<bool> FlowNnmclub(IList<NnmclubListItem> lst)
-        {
-            foreach (NnmclubListItem item in lst)
-            {
-                //Парсим
-                NnmclubParseItemInput paramParseInp =
-                    _context.NnmclubParseItemInputs
-                    .Single(el => el.Active);
-                paramParseInp.ListItemId = item.Id;
-                NnmclubItem nnmclubItem = await _nnmclubService.ParseItem(paramParseInp);
-                if (nnmclubItem == null)
-                {
-                    _logger.LogError("Не удалось распарсить пост. NnmclubListItem.Id = " + item.Id);
-                    return false;
-                }
-
-                //Выкладываем
-                PublishResult result = await Send(nameof(NnmclubItem), nnmclubItem.Id);
-                if (result == PublishResult.Error)
-                {
-                    _logger.LogError("Ошибка при отправке поста");
-                    return false;
-                }
-                if (result == PublishResult.FileExist)
-                {
-                    _logger.LogError("Пост уже существует, переходим к следующему");
-                    continue;
-                }
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Подготавливаем и выкладываем пост
-        /// </summary>
-        /// <param name="itemType">Тип поста</param>
-        /// <param name="itemId">Id поста</param>
-        /// <returns>Если метод выполнен успешно - true, инчае false</returns>
-        async Task<PublishResult> Send(string itemType, int itemId)
-        {
-            //Подготавливаем
-            DriverToSoftInput driverInput =
-                _context.DriverToSoftInputs
-                .Single(el => el.Active && el.Type == itemType);
-            driverInput.ParseItemId = itemId;
-            SoftPost post = await _driverService.Convert(driverInput);
-            if (post == null)
-            {
-                _logger.LogError($"Не удалось подготовить пост к публикации. {itemType}.Id = " + itemId);
-                return PublishResult.Error;
-            }
-
-            //Выкладываем
-            SoftPostInput softPostInput =
-                _context.SoftPostInputs
-                .Single(el => el.Active);
-            softPostInput.SoftPostId = post.Id;
-            softPostInput.PosterUploadQueryString =
-                _context.DictionaryValues
-                .Where(el => el.DictionaryName == softPostInput.PosterUploadQueryStringId)
-                .ToDictionary(k => k.Key, v => v.Value);
-            softPostInput.TorrentUploadQueryString =
-                _context.DictionaryValues
-                .Where(el => el.DictionaryName == softPostInput.TorrentUploadQueryStringId)
-                .ToDictionary(k => k.Key, v => v.Value);
-            softPostInput.FormData =
-                _context.DictionaryValues
-                .Where(el => el.DictionaryName == softPostInput.FormDataId)
-                .ToDictionary(k => k.Key, v => v.Value);
-            softPostInput.AuthData =
-                _context.DictionaryValues
-                .Where(el => el.DictionaryName == softPostInput.AuthDataId)
-                .ToDictionary(k => k.Key, v => v.Value);
-            PublishResult result = await _softService.AddPost(softPostInput);
-            if (result == PublishResult.Error)
-            {
-                _logger.LogError("Не удалось выложить пост на сайт. SoftPost.Id = " + post.Id);
-                return PublishResult.Error;
-            }
-            if (result == PublishResult.FileExist)
-            {
-                _logger.LogError("Не удалось выложить пост на сайт. Такой файл уже загружен.");
-                return PublishResult.FileExist;
-            }
-            return PublishResult.Success;
+                    Created = el.Created,
+                    Name = el.Name
+                };
+            return query.ToList();
         }
     }
 }

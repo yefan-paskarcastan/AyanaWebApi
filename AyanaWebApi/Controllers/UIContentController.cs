@@ -8,10 +8,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 using AyanaWebApi.Services.Interfaces;
+using AyanaWebApi.DTO;
 
 namespace AyanaWebApi.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("[controller]")]
     public class UIContentController : ControllerBase
@@ -28,6 +29,12 @@ namespace AyanaWebApi.Controllers
         {
             bool res = _contentService.Prepare();
             return Ok("Выполнено успешно!");
+        }
+
+        [HttpPost("GetProgramsList")]
+        public ActionResult<IList<ListItem>> GetProgramsList()
+        {
+            return Ok(_contentService.GetProgramsList());
         }
     }
 }

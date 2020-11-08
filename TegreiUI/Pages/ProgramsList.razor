@@ -2,7 +2,7 @@
 @using System.Text;
 @using System.Globalization;
 @using Newtonsoft.Json;
-@using AyanaWebApi.Models;
+@using AyanaWebApi.DTO;
 @inject HttpClient _http;
 
 @if (_programsList == null)
@@ -33,7 +33,7 @@ else
 }
 @code
 {
-    private IList<RutorItem> _programsList;
+    private IList<ListItem> _programsList;
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,16 +43,16 @@ else
     async void GetList()
     {
         var stringContent = new StringContent("", Encoding.UTF8, "application/json");
-        var result = await _http.PostAsync("https://localhost:44334/TegreiUI/rutorList", stringContent);
+        var result = await _http.PostAsync("https://localhost:44334/UIContent/GetProgramsList", stringContent);
         if (result.IsSuccessStatusCode)
         {
             var contents = await result.Content.ReadAsStringAsync();
-            _programsList = JsonConvert.DeserializeObject<IList<RutorItem>>(contents);
+            _programsList = JsonConvert.DeserializeObject<IList<ListItem>>(contents);
             this.StateHasChanged();
         }
         else
         {
-            _programsList = new List<RutorItem>();
+            _programsList = new List<ListItem>();
         }
     }
 }
