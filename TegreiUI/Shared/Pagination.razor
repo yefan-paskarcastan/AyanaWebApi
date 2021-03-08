@@ -1,0 +1,12 @@
+﻿<ul class="pagination justify-content-center">
+    <li class="page-item shadow-sm"><a class="page-link">«</a></li>
+    @for (int i = 1; i <= MaxPage; i++)
+    {
+        int locVar = i;
+        <li class="page-item shadow-sm @(locVar == CurrentPage ? "active" : null)"
+            @onclick="() => ChangePage(locVar)">
+            <a class="page-link" href="/mock">@i</a>
+        </li>
+    }
+    <li class="page-item shadow-sm"><a class="page-link">»</a></li>
+</ul>
