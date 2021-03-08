@@ -224,8 +224,10 @@ namespace AyanaWebApi.Services
                 webClient.Proxy = new HttpToSocks5Proxy(proxyAddress, proxyPort);
             if (authPage != null)
             {
-                webClient.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
-                await webClient.UploadStringTaskAsync(authPage, authParam);
+                //todo : иногда не работает авторизация
+                /*webClient.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                await webClient.UploadStringTaskAsync(authPage, authParam); */
+                webClient.Headers.Add(HttpRequestHeader.Cookie, "phpbb2mysql_4_data=a%3A2%3A%7Bs%3A11%3A%22autologinid%22%3Bs%3A32%3A%22cb75a18e5540db38390daca79665397f%22%3Bs%3A6%3A%22userid%22%3Bi%3A10507528%3B%7D; phpbb2mysql_4_sid=f48e60f3de704a038c4e85a3285d1aee; phpbb2mysql_4_t=a%3A1%3A%7Bi%3A1443472%3Bi%3A1611880370%3B%7D");
             }
 
             string folderName = Environment.CurrentDirectory 
