@@ -1,13 +1,7 @@
-﻿@page "/"
+﻿@using System.Globalization;
+
+@page "/"
 @page "/programms/{_currentPage:int}"
-
-@using System.Text;
-@using System.Globalization;
-
-@using Newtonsoft.Json;
-@using AyanaWebApi.DTO;
-
-@inject HttpClient _http;
 
 @if (_programsList == null)
 {
@@ -19,7 +13,7 @@ else if (_programsList.Count == 0)
 }
 else
 {
-    <PaginationMenu />
+    <Pagination CurrentPage="@_currentPage" />
     <div class="table-responsive">
         <table class="table table-striped table-sm">
             <thead>
@@ -39,42 +33,5 @@ else
             </tbody>
         </table>
     </div>
-    <PaginationMenu />
-}
-@code
-{
-    [Parameter]
-    public int _currentPage { get; set; }
-
-    private IList<ListItem> _programsList;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-        if (_currentPage == 0)
-            _currentPage = 1;
-        GetList(_currentPage, 50);
-    }
-
-    async void GetList(int currentPage, int countItem)
-    {
-        var pagination = new Pagination
-        {
-            CountItem = countItem,
-            CurrentPage = currentPage
-        };
-        string json = JsonConvert.SerializeObject(pagination);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var result = await _http.PostAsync("https://localhost:44334/UIContent/GetPrograms", content);
-        if (result.IsSuccessStatusCode)
-        {
-            var contents = await result.Content.ReadAsStringAsync();
-            _programsList = JsonConvert.DeserializeObject<IList<ListItem>>(contents);
-            this.StateHasChanged();
-        }
-        else
-        {
-            _programsList = new List<ListItem>();
-        }
-    }
+    <Pagination CurrentPage="@_currentPage" />
 }
